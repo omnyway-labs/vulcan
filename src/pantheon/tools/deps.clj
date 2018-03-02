@@ -1,6 +1,7 @@
 (ns pantheon.tools.deps
   (:require
    [clojure.string :as str]
+   [clojure.pprint :as pprint]
    [clojure.java.io :as io]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.gitlibs :as gl]
@@ -15,6 +16,11 @@
 (defn read-deps-file []
   (with-open [rdr (-> "deps.edn" io/reader (PushbackReader.))]
     (edn/read rdr)))
+
+(defn write-deps-file [data]
+  (with-open [w (io/writer "deps.edn")]
+    (binding [*out* w]
+      (pprint/pprint data))))
 
 (defn list-omnypay-repos []
   (->> (:deps (read-deps-file))
@@ -41,14 +47,29 @@
   (let [url (make-git-url repo)
         git-dir (impl/ensure-git-dir url)
         walk (RevWalk. (impl/git-repo git-dir))]
-    walk))
+    ;; FIXME:
+    "master"))
 
-(defn latest-tags
-  "List latest tags for all git procurers defined in deps.edn"
-  []
-  )
+(defn make-dep [repo]
+  (let [tag (latest-tag  repo)]
+    {(symbol (str  "omnypay/" (name repo)))
+     {:git/url (make-git-url repo)
+      :tag     tag
+      :sha     (tag->sha repo tag)}}))
 
-(defn update-latest-tags
-  "update deps.edn with latest tags and resolve-tags"
-  []
-  )
+(defn merge-deps! [deps]
+  ;; FIXME: update-in did not work for some reason
+  (let [deps-edn (read-deps-file)]
+    (merge deps-edn
+           {:deps (-> (:deps deps-edn)
+                      (merge deps))})))
+
+(defn upgrade-latest-tags []
+  (->> (list-omnypay-repos)
+       (map make-dep)
+       (into {})
+       (merge-deps!)
+       (write-deps-file)))
+
+(defn -main [& args]
+  (upgrade-latest-tags))
