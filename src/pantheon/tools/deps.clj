@@ -36,7 +36,7 @@
   (gl/descendant (make-git-url repo) [tag]))
 
 (defn latest-tag
-/  "Get the latest tag for given repo"
+  "Get the latest tag for given repo"
   [repo]
   (let [url (make-git-url repo)
         git-dir (impl/ensure-git-dir url)
