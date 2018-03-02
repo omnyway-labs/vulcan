@@ -1,4 +1,4 @@
-(ns pantheon.dev.nrepl
+(ns pantheon.tools.nrepl
   (:require
    [clojure.tools.nrepl.server :refer [start-server]]
    [cider.nrepl :refer [cider-nrepl-handler]]))
