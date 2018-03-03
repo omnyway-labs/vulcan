@@ -61,11 +61,9 @@
   [dep]
   (let [url (:git/url dep)
         {:keys [time] :as latest} (find-latest-tag url)]
-    (merge
-     dep
-     latest
-     (when time
-       {:time (u/secs->timestamp time)}))))
+    (merge dep latest
+           (when time
+             {:time (u/secs->timestamp time)}))))
 
 (defn make-dep [dep]
   (-> dep
@@ -112,9 +110,10 @@
 
 (def cli-options
   [["-r" "--resolve"]
+   ["-f" "--flatten"]
    ["-u" "--upgrade"]
    ["-d" "--diff"]
-   ["-f" "--flatten"]
+   ["-d" "--diff"]
    ["-h" "--help"]])
 
 (defn prn-edn [edn]
