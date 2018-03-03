@@ -11,8 +11,15 @@
    [pantheon.tools.util :as u])
   (:import
    [java.io PushbackReader]
+   [org.eclipse.jgit.errors
+    IncorrectObjectTypeException]
+   [org.eclipse.jgit.util
+    RefMap]
+   [org.eclipse.jgit.internal.storage.file
+    FileRepository]
    [org.eclipse.jgit.revwalk
-    RevWalk RevTag]))
+
+    RevWalk RevTag RevCommit]))
 
 (defn omethods [obj]
   (map #(.getName %) (-> obj class .getMethods)))
@@ -27,42 +34,47 @@
               *print-dup* true]
       (pprint/pprint data))))
 
-(defn find-pantheon-repos [deps]
-  (->> (keys deps)
-       (filter #(str/starts-with? % "omnypay"))
-       (map keyword)))
+(defn find-pantheon-deps [deps]
+  (->> deps
+       (filter #(str/starts-with? (key %) "omnypay"))
+       (into {})))
 
-(defn make-git-url [repo]
-  (format "git@github.com:omnypay/%s.git" (name repo)))
+(defn make-git-db [url]
+  (-> url
+      impl/ensure-git-dir
+      impl/git-repo))
 
-(defn tag->sha
-  "Given a repo and tag, return the sha"
-  [repo tag]
-  (gl/resolve (make-git-url repo) tag))
+(defn tag-info [^RevWalk walk ^RefMap tag]
+  (let [commit (->> (.. tag getValue getObjectId)
+                    (.parseCommit walk))]
+    {:time    (.getCommitTime commit)
+     :tag     (.getKey tag)
+     :sha     (.getName commit)}))
 
-(defn sha->tag
-  "Given a repo and sha, return the immediate tag"
-  [repo tag]
-  (gl/descendant (make-git-url repo) [tag]))
+(defn sort-tags [^RevWalk walk tags]
+  (->> (map #(tag-info walk %) tags)
+       (sort-by :time)))
 
-(defn latest-tag
-  "Get the latest tag for given repo"
-  [repo]
-  (let [url (make-git-url repo)
-        git-dir (impl/ensure-git-dir url)
-        walk (RevWalk. (impl/git-repo git-dir))]
-    ;; FIXME:
-    "master"))
+(defn find-latest-tag
+  "Find the latest tag for given git repo"
+  [url]
+  (when url
+    (let [db   (make-git-db url)
+          walk (RevWalk. db)]
+      (->> (.getTags db)
+           (sort-tags walk)
+           (last)))))
 
-(defn make-dep [repo]
-  (let [tag (latest-tag  repo)]
-    {(symbol (str  "omnypay/" (name repo)))
-     {:git/url (make-git-url repo)
-      :tag     tag
-      :sha     (tag->sha repo tag)}}))
+(defn make-pantheon-dep [dep]
+  (let [url (:git/url dep)
+        {:keys [time] :as latest} (find-latest-tag url)]
+    (merge dep
+           latest
+           (when time
+             {:time (u/secs->timestamp time)}))))
 
-(defn as-dep [dep-map]
-  (-> dep-map
+(defn make-dep [dep]
+  (-> dep
       (select-keys [:mvn/version :git/url :local/root
                     :sha :exclusions :dependents])
       (update-in [:dependents] (partial (comp vec distinct)))
@@ -70,12 +82,11 @@
 
 (defn flatten-deps [deps]
   (->> (deps/resolve-deps {:deps deps} nil)
-       (reduce-kv #(assoc %1 %2 (as-dep %3)) {})))
+       (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
 
 (defn resolve-pantheon-deps [deps]
-  (->> (find-pantheon-repos deps)
-       (map make-dep)
-       (into {})))
+  (->> (find-pantheon-deps deps)
+       (reduce-kv #(assoc %1 %2 (make-pantheon-dep %3)) {})))
 
 (defn flatten-and-resolve [deps]
   (let [flat-deps (flatten-deps deps)]
