@@ -61,10 +61,11 @@
   [dep]
   (let [url (:git/url dep)
         {:keys [time] :as latest} (find-latest-tag url)]
-    (merge dep
-           latest
-           (when time
-             {:time (u/secs->timestamp time)}))))
+    (merge
+     dep
+     latest
+     (when time
+       {:time (u/secs->timestamp time)}))))
 
 (defn make-dep [dep]
   (-> dep
