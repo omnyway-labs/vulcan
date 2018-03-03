@@ -65,7 +65,7 @@
   (-> dep-map
       (select-keys [:mvn/version :git/url :local/root
                     :sha :exclusions :dependents])
-      (update-in [:dependents] (comp distinct sort))
+      (update-in [:dependents] (partial apply sorted-set))
       (u/remove-nil-entries)))
 
 (defn flatten-deps [deps]
