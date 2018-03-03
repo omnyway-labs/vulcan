@@ -1,5 +1,11 @@
 {:deps
- {org.clojure/clojure       {:mvn/version "1.9.0"}
-  org.clojure/tools.gitlibs {:mvn/version "0.2.59"}
-  org.clojure/tools.nrepl   {:mvn/version "0.2.12"}
-  cider/cider-nrepl         {:mvn/version "0.16.0"}}}
+ {org.clojure/clojure          {:mvn/version "1.9.0"}
+  org.clojure/tools.deps.alpha {:mvn/version "0.5.398"
+                                :exclusions  [com.fzakaria/slf4j-timbre
+                                              org.slf4j/log4j-over-slf4j
+                                              org.slf4j/slf4j-log4j12
+                                              org.slf4j/slf4j-nop
+                                              ch.qos.logback/logback-classic]}
+  org.clojure/tools.nrepl      {:mvn/version "0.2.12"}
+  org.clojure/tools.cli        {:mvn/version "0.3.5"}
+  cider/cider-nrepl            {:mvn/version "0.16.0"}}}

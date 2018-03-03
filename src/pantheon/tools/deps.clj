@@ -3,9 +3,12 @@
    [clojure.string :as str]
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
+   [clojure.tools.deps.alpha :as deps]
    [clojure.tools.reader.edn :as edn]
+   [clojure.tools.cli :refer [parse-opts]]
    [clojure.tools.gitlibs :as gl]
-   [clojure.tools.gitlibs.impl :as impl])
+   [clojure.tools.gitlibs.impl :as impl]
+   [pantheon.tools.util :as u])
   (:import
    [java.io PushbackReader]
    [org.eclipse.jgit.revwalk RevWalk RevTag]))
@@ -19,12 +22,22 @@
 
 (defn write-deps-file [data]
   (with-open [w (io/writer "deps.edn")]
-    (binding [*out* w]
+    (binding [*out* w *print-dup* true]
       (pprint/pprint data))))
 
-(defn list-omnypay-repos []
-  (->> (:deps (read-deps-file))
-       keys
+(defn merge-deps [deps]
+  (let [orig (read-deps-file)]
+    (merge orig
+           {:deps (-> (:deps orig)
+                      (merge deps))})))
+
+(defn persist! [deps]
+  (->> (merge-deps deps)
+       (into (sorted-map))
+       (write-deps-file)))
+
+(defn find-pantheon-repos [{:keys [deps]}]
+  (->> (keys deps)
        (filter #(str/starts-with? % "omnypay"))
        (map keyword)))
 
@@ -57,19 +70,60 @@
       :tag     tag
       :sha     (tag->sha repo tag)}}))
 
-(defn merge-deps! [deps]
-  ;; FIXME: update-in did not work for some reason
-  (let [deps-edn (read-deps-file)]
-    (merge deps-edn
-           {:deps (-> (:deps deps-edn)
-                      (merge deps))})))
+(defn as-dep [dep-map]
+  (-> dep-map
+      (select-keys [:mvn/version :git/url :local/root
+                    :sha :exclusions :dependents])
+      (update-in [:dependents] (comp distinct sort))
+      (u/remove-nil-entries)))
 
-(defn upgrade-latest-tags []
-  (->> (list-omnypay-repos)
-       (map make-dep)
-       (into {})
-       (merge-deps!)
-       (write-deps-file)))
+(defn flatten-deps [deps]
+  (->> (deps/resolve-deps deps nil)
+       (reduce-kv #(assoc %1 %2 (as-dep %3)) {})))
+
+(defn resolve-latest-tags [repos]
+  (->> (map make-dep repos)
+       (into {})))
+
+(defn flatten-and-resolve [deps]
+  (let [repos (find-pantheon-repos deps)]
+    (merge (flatten-deps deps)
+           (resolve-latest-tags repos))))
+
+(defn show-cmd []
+  (-> (read-deps-file)
+      (find-pantheon-repos)
+      (resolve-latest-tags)))
+
+(defn flatten-cmd []
+  (->> (read-deps-file)
+       (flatten-and-resolve)
+       (into (sorted-map))))
+
+(defn upgrade-cmd []
+  (-> (read-deps-file)
+      (flatten-and-resolve)
+      (persist!)))
+
+(def cli-options
+  [["-s" "--show"]
+   ["-u" "--upgrade"]
+   ["-d" "--diff"]
+   ["-f" "--flatten"]
+   ["-r" "--resolve"]
+   ["-a" "--all-master"]
+   ["-h" "--help"]])
+
+(defn prn-edn [edn]
+  (binding [*print-dup* true]
+    (pprint/pprint edn)))
 
 (defn -main [& args]
-  (upgrade-latest-tags))
+  (let [{:keys [options]} (parse-opts args cli-options)
+        {:keys [show upgrade flatten]} options]
+    (when show
+      (prn-edn (show-cmd)))
+    (when flatten
+      (prn-edn (flatten-cmd)))
+    (when upgrade
+      (upgrade-cmd))))
