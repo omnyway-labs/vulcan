@@ -55,7 +55,10 @@
            (sort-tags walk)
            (last)))))
 
-(defn make-pantheon-dep [dep]
+(defn make-pantheon-dep
+  "Given a dependency map returns the pantheon repositories
+   with the latest tag and corresponding SHA"
+  [dep]
   (let [url (:git/url dep)
         {:keys [time] :as latest} (find-latest-tag url)]
     (merge dep
@@ -66,15 +69,19 @@
 (defn make-dep [dep]
   (-> dep
       (select-keys [:mvn/version :git/url :local/root
-                    :sha :exclusions :dependents])
+                    :sha :exclusions :dependents :time :tag])
       (update-in [:dependents] (partial (comp vec distinct)))
       (u/remove-nil-entries)))
 
-(defn flatten-deps [deps]
+(defn flatten-deps
+  "Recursively finds the depedencies and flattens them.
+   Latest version in a conflict, wins"
+  [deps]
   (->> (deps/resolve-deps {:deps deps} nil)
        (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
 
-(defn resolve-pantheon-deps [deps]
+(defn resolve-pantheon-deps
+  [deps]
   (->> (find-pantheon-deps deps)
        (reduce-kv #(assoc %1 %2 (make-pantheon-dep %3)) {})))
 

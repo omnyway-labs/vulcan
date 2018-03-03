@@ -12,10 +12,18 @@
      ~@body
      (catch Throwable e# nil)))
 
+;; (defn remove-nil-entries
+;;   "remove keys from the map if their values are nil"
+;;   [m]
+;;   (reduce-kv #(if %3 (assoc %1 %2 %3) %1)
+;;              {}
+;;              m))
+
 (defn remove-nil-entries
   "remove keys from the map if their values are nil"
   [m]
-  (reduce-kv #(if %3 (assoc %1 %2 %3) %1)
+  (reduce-kv #(if (and %3 (not (empty? %3)))
+                (assoc %1 %2 %3) %1)
              {}
              m))
 
