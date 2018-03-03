@@ -22,7 +22,8 @@
 
 (defn write-deps-file [data]
   (with-open [w (io/writer "deps.edn")]
-    (binding [*out* w *print-dup* true]
+    (binding [*out* w
+              *print-dup* true]
       (pprint/pprint data))))
 
 (defn merge-deps [deps]
@@ -30,11 +31,6 @@
     (merge orig
            {:deps (-> (:deps orig)
                       (merge deps))})))
-
-(defn persist! [deps]
-  (->> (merge-deps deps)
-       (into (sorted-map))
-       (write-deps-file)))
 
 (defn find-pantheon-repos [{:keys [deps]}]
   (->> (keys deps)
@@ -101,9 +97,12 @@
        (into (sorted-map))))
 
 (defn upgrade-cmd []
-  (-> (read-deps-file)
-      (flatten-and-resolve)
-      (persist!)))
+  (->> (read-deps-file)
+       (flatten-and-resolve)
+       (merge-deps)
+       (into (sorted-map))
+      ;(write-deps-file)
+      ))
 
 (def cli-options
   [["-s" "--show"]
@@ -126,4 +125,4 @@
     (when flatten
       (prn-edn (flatten-cmd)))
     (when upgrade
-      (upgrade-cmd))))
+      (prn-edn (upgrade-cmd)))))
