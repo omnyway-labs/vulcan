@@ -11,7 +11,8 @@
    [pantheon.tools.util :as u])
   (:import
    [java.io PushbackReader]
-   [org.eclipse.jgit.revwalk RevWalk RevTag]))
+   [org.eclipse.jgit.revwalk
+    RevWalk RevTag]))
 
 (defn omethods [obj]
   (map #(.getName %) (-> obj class .getMethods)))
@@ -26,13 +27,7 @@
               *print-dup* true]
       (pprint/pprint data))))
 
-(defn merge-deps [deps]
-  (let [orig (read-deps-file)]
-    (merge orig
-           {:deps (-> (:deps orig)
-                      (merge deps))})))
-
-(defn find-pantheon-repos [{:keys [deps]}]
+(defn find-pantheon-repos [deps]
   (->> (keys deps)
        (filter #(str/starts-with? % "omnypay"))
        (map keyword)))
@@ -74,43 +69,43 @@
       (u/remove-nil-entries)))
 
 (defn flatten-deps [deps]
-  (->> (deps/resolve-deps deps nil)
+  (->> (deps/resolve-deps {:deps deps} nil)
        (reduce-kv #(assoc %1 %2 (as-dep %3)) {})))
 
-(defn resolve-latest-tags [repos]
-  (->> (map make-dep repos)
+(defn resolve-pantheon-deps [deps]
+  (->> (find-pantheon-repos deps)
+       (map make-dep)
        (into {})))
 
 (defn flatten-and-resolve [deps]
-  (let [repos (find-pantheon-repos deps)]
-    (merge (flatten-deps deps)
-           (resolve-latest-tags repos))))
+  (let [flat-deps (flatten-deps deps)]
+    (->> (resolve-pantheon-deps flat-deps)
+         (merge flat-deps))))
 
-(defn show-cmd []
+(defn resolve-cmd []
   (-> (read-deps-file)
-      (find-pantheon-repos)
-      (resolve-latest-tags)))
+      :deps
+      (resolve-pantheon-deps)))
 
 (defn flatten-cmd []
   (->> (read-deps-file)
-       (flatten-and-resolve)
+       :deps
+       (flatten-deps)
        (into (sorted-map))))
 
 (defn upgrade-cmd []
-  (->> (read-deps-file)
-       (flatten-and-resolve)
-       (merge-deps)
-       (into (sorted-map))
-      ;(write-deps-file)
-      ))
+  (let [{:keys [deps] :as orig} (read-deps-file)]
+    (->> (flatten-and-resolve deps)
+         (into (sorted-map))
+         (assoc orig :deps)
+         (into (sorted-map))
+         (write-deps-file))))
 
 (def cli-options
-  [["-s" "--show"]
+  [["-r" "--resolve"]
    ["-u" "--upgrade"]
    ["-d" "--diff"]
    ["-f" "--flatten"]
-   ["-r" "--resolve"]
-   ["-a" "--all-master"]
    ["-h" "--help"]])
 
 (defn prn-edn [edn]
@@ -119,10 +114,11 @@
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [show upgrade flatten]} options]
-    (when show
-      (prn-edn (show-cmd)))
+        {:keys [resolve upgrade flatten]} options]
+    (when resolve
+      (prn-edn (resolve-cmd)))
     (when flatten
       (prn-edn (flatten-cmd)))
     (when upgrade
-      (prn-edn (upgrade-cmd)))))
+      (upgrade-cmd)
+      (println "Wrote deps.edn"))))
