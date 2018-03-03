@@ -11,18 +11,8 @@
    [pantheon.tools.util :as u])
   (:import
    [java.io PushbackReader]
-   [org.eclipse.jgit.errors
-    IncorrectObjectTypeException]
-   [org.eclipse.jgit.util
-    RefMap]
-   [org.eclipse.jgit.internal.storage.file
-    FileRepository]
-   [org.eclipse.jgit.revwalk
-
-    RevWalk RevTag RevCommit]))
-
-(defn omethods [obj]
-  (map #(.getName %) (-> obj class .getMethods)))
+   [org.eclipse.jgit.util RefMap]
+   [org.eclipse.jgit.revwalk RevWalk]))
 
 (defn read-deps-file []
   (with-open [rdr (-> "deps.edn" io/reader (PushbackReader.))]

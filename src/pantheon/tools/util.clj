@@ -87,3 +87,6 @@
 
 (defn secs->timestamp [secs]
   (format-timestamp (* secs 1000)))
+
+(defn omethods [obj]
+  (map #(.getName %) (-> obj class .getMethods)))
