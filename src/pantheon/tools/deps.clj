@@ -1,4 +1,5 @@
 (ns pantheon.tools.deps
+  (:refer-clojure :exclude [flatten])
   (:require
    [clojure.string :as str]
    [clojure.pprint :as pprint]
@@ -8,8 +9,10 @@
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.tools.gitlibs :as gl]
    [clojure.tools.gitlibs.impl :as impl]
+   [pantheon.tools.commands :refer [defcommand] :as c]
    [pantheon.tools.util :as u])
   (:import
+   [clojure.lang ExceptionInfo]
    [java.io PushbackReader]
    [org.eclipse.jgit.util RefMap]
    [org.eclipse.jgit.revwalk RevWalk]))
@@ -89,7 +92,7 @@
     (->> (find-latest-pantheon-deps flat-deps)
          (merge flat-deps))))
 
-(defn diff [old new]
+(defn diff* [old new]
   (letfn [(find [m k at]
             (get-in m [k at]))
           (same? [k]
@@ -103,18 +106,18 @@
          (map as-diff)
          (into {}))))
 
-(defn latest-deps-cmd []
+(defn do-find-latest-deps []
   (-> (read-deps-file)
       :deps
       (find-latest-pantheon-deps)))
 
-(defn flatten-cmd []
+(defn do-flatten []
   (->> (read-deps-file)
        :deps
        (flatten-all-deps)
        (into (sorted-map))))
 
-(defn upgrade-cmd []
+(defn do-upgrade []
   (let [{:keys [deps] :as orig} (read-deps-file)]
     (->> (flatten-latest-pantheon-deps deps)
          (into (sorted-map))
@@ -122,33 +125,60 @@
          (into (sorted-map))
          (write-deps-file))))
 
-(defn diff-cmd []
+(defn do-diff []
   (let [{:keys [deps]} (read-deps-file)
-        orig (find-pantheon-deps deps)
-        latest (find-latest-pantheon-deps deps)]
-    (diff orig latest)))
+        orig     (find-pantheon-deps deps)
+        latest   (find-latest-pantheon-deps deps)]
+    (diff* orig latest)))
 
-(def cli-options
-  [["-l" "--latest"]
-   ["-f" "--flatten"]
-   ["-u" "--upgrade"]
-   ["-d" "--diff"]
-   ["-h" "--help"]])
+(defcommand
+  ^{:alias "latest"
+    :doc   "Find latest Pantheon Tags"}
+  latest [opts]
+  (u/prn-edn (do-find-latest-deps)))
 
-(defn prn-edn [edn]
-  (binding [*print-dup* true]
-    (pprint/pprint edn)))
+(defcommand
+  ^{:alias "flatten"
+    :doc   "Flatten out all dependencies recursively"}
+  flatten [opts]
+  (u/prn-edn (do-flatten)))
+
+(defcommand
+  ^{:alias "upgrade"
+    :doc   "Upgrade Pantheon deps to latest tags"}
+  upgrade [opts]
+  (u/prn-edn (do-diff))
+  (do-upgrade)
+  (println "Wrote deps.edn"))
+
+(defcommand
+  ^{:alias "diff"
+    :doc   "Show diff of current and upstream tags for Pantheon repos"}
+  diff [opts]
+  (u/prn-edn (do-diff)))
+
+(defcommand
+  ^{:alias "help"
+    :doc "Display basic documentation"}
+  help-command [opts]
+  (c/print-usage opts "Usage:"))
+
+(def ^:private cli-opts
+  [["-h" "--help"]])
 
 (defn -main [& args]
-  (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [latest upgrade
-                flatten diff]} options]
-    (when resolve
-      (prn-edn (latest-deps-cmd)))
-    (when flatten
-      (prn-edn (flatten-cmd)))
-    (when upgrade
-      (upgrade-cmd)
-      (println "Wrote deps.edn"))
-    (when diff
-      (prn-edn (diff-cmd)))))
+  (let [parsed-opts (parse-opts args cli-opts)
+        {:keys [options summary arguments]} parsed-opts]
+    (try
+      (if (:help options)
+        (help-command parsed-opts)
+        (doseq [command arguments]
+          (c/execute! command parsed-opts)))
+      (catch ExceptionInfo ex
+        (let [{:keys [reason command]} (ex-data ex)]
+          (if (= :unrecognized-command reason)
+            (do
+              (println (.getMessage ex))
+              (help-command parsed-opts)))))
+      (catch Exception ex
+        (System/exit 1)))))

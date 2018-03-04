@@ -1,5 +1,6 @@
 (ns pantheon.tools.util
   (:require
+   [clojure.pprint :as pprint]
    [clojure.string :as str])
   (:import
    [java.util Calendar Date TimeZone UUID]
@@ -11,13 +12,6 @@
   `(try
      ~@body
      (catch Throwable e# nil)))
-
-;; (defn remove-nil-entries
-;;   "remove keys from the map if their values are nil"
-;;   [m]
-;;   (reduce-kv #(if %3 (assoc %1 %2 %3) %1)
-;;              {}
-;;              m))
 
 (defn remove-nil-entries
   "remove keys from the map if their values are nil"
@@ -98,3 +92,7 @@
 
 (defn omethods [obj]
   (map #(.getName %) (-> obj class .getMethods)))
+
+(defn prn-edn [edn]
+  (binding [*print-dup* true]
+    (pprint/pprint edn)))
