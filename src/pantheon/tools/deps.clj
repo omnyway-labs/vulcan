@@ -103,7 +103,7 @@
          (map as-diff)
          (into {}))))
 
-(defn resolve-cmd []
+(defn latest-deps-cmd []
   (-> (read-deps-file)
       :deps
       (find-latest-pantheon-deps)))
@@ -129,7 +129,7 @@
     (diff orig latest)))
 
 (def cli-options
-  [["-r" "--resolve"]
+  [["-l" "--latest"]
    ["-f" "--flatten"]
    ["-u" "--upgrade"]
    ["-d" "--diff"]
@@ -141,10 +141,10 @@
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [resolve upgrade
+        {:keys [latest upgrade
                 flatten diff]} options]
     (when resolve
-      (prn-edn (resolve-cmd)))
+      (prn-edn (latest-deps-cmd)))
     (when flatten
       (prn-edn (flatten-cmd)))
     (when upgrade
