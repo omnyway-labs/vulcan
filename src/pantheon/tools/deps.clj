@@ -94,10 +94,10 @@
 
 (defn diff-dep
   "Takes a diff of two dep maps
-  (diff-dep {:a {:tag 1.0 :time x}
-            {:a {:tag 2.0 :time y)
+  (diff-dep {:a {:tag 1.0 :time x}}
+            {:a {:tag 2.0 :time y}})
   => {:a {1.0 x 2.0 y}
-  returns nil if the tags are the same"
+  returns {} if the tags are the same"
   [old new]
   (letfn [(find [m k at]
             (get-in m [k at]))
