@@ -138,9 +138,9 @@
     (diff-dep  orig latest)))
 
 (defcommand
-  ^{:alias "resolve"
+  ^{:alias "latest"
     :doc   "Find and resolve latest Pantheon Tags"}
-  resolve [opts]
+  latest [opts]
   (u/prn-edn (do-find-latest-deps)))
 
 (defcommand
@@ -174,22 +174,5 @@
   help-command [opts]
   (c/print-usage opts "Usage:"))
 
-(def ^:private cli-opts
-  [["-h" "--help"]])
-
 (defn -main [& args]
-  (let [parsed-opts (parse-opts args cli-opts)
-        {:keys [options summary arguments]} parsed-opts]
-    (try
-      (if (:help options)
-        (help-command parsed-opts)
-        (doseq [command arguments]
-          (c/execute! command parsed-opts)))
-      (catch ExceptionInfo ex
-        (let [{:keys [reason command]} (ex-data ex)]
-          (if (= :unrecognized-command reason)
-            (do
-              (println (.getMessage ex))
-              (help-command parsed-opts)))))
-      (catch Exception ex
-        (System/exit 1)))))
+  (c/process args))
