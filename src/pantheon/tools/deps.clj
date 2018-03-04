@@ -56,7 +56,7 @@
            (last)))))
 
 (defn make-pantheon-dep
-  "Given a dependency map returns the pantheon repositories
+  "Given a dependency map returns the pantheon repository
    with the latest tag and corresponding SHA"
   [dep]
   (let [url (:git/url dep)
