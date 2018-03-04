@@ -147,9 +147,14 @@
   ^{:alias "upgrade"
     :doc   "Upgrade Pantheon deps to latest tags"}
   upgrade [opts]
-  (u/prn-edn (do-diff))
-  (do-upgrade)
-  (println "Wrote deps.edn"))
+  (println "Diffing..")
+  (let [df (do-diff)]
+    (u/prn-edn df)
+    (if (empty? df)
+      (println "Nothing to upgrade. All Pantheon deps are latest")
+      (do
+        (do-upgrade)
+        (println "Wrote deps.edn")))))
 
 (defcommand
   ^{:alias "diff"
