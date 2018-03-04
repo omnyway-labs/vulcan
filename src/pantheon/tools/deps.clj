@@ -1,5 +1,5 @@
 (ns pantheon.tools.deps
-  (:refer-clojure :exclude [flatten])
+  (:refer-clojure :exclude [flatten resolve])
   (:require
    [clojure.string :as str]
    [clojure.pprint :as pprint]
