@@ -72,47 +72,66 @@
       (update-in [:dependents] (partial (comp vec distinct)))
       (u/remove-nil-entries)))
 
-(defn flatten-deps
+(defn flatten-all-deps
   "Recursively finds the depedencies and flattens them.
    Latest version in a conflict, wins"
   [deps]
   (->> (deps/resolve-deps {:deps deps} nil)
        (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
 
-(defn resolve-pantheon-deps
+(defn find-latest-pantheon-deps
   [deps]
   (->> (find-pantheon-deps deps)
        (reduce-kv #(assoc %1 %2 (make-pantheon-dep %3)) {})))
 
-(defn flatten-and-resolve [deps]
-  (let [flat-deps (flatten-deps deps)]
-    (->> (resolve-pantheon-deps flat-deps)
+(defn flatten-latest-pantheon-deps [deps]
+  (let [flat-deps (flatten-all-deps deps)]
+    (->> (find-latest-pantheon-deps flat-deps)
          (merge flat-deps))))
+
+(defn diff [old new]
+  (letfn [(find [m k at]
+            (get-in m [k at]))
+          (same? [k]
+            (= (find old k :tag)
+               (find new k :tag)))
+          (as-diff [k]
+            (when-not (same? k)
+              {k {(find old k :tag) (find old k :time)
+                  (find new k :tag) (find new k :time)}}))]
+    (->> (keys old)
+         (map as-diff)
+         (into {}))))
 
 (defn resolve-cmd []
   (-> (read-deps-file)
       :deps
-      (resolve-pantheon-deps)))
+      (find-latest-pantheon-deps)))
 
 (defn flatten-cmd []
   (->> (read-deps-file)
        :deps
-       (flatten-deps)
+       (flatten-all-deps)
        (into (sorted-map))))
 
 (defn upgrade-cmd []
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (flatten-and-resolve deps)
+    (->> (flatten-latest-pantheon-deps deps)
          (into (sorted-map))
          (assoc orig :deps)
          (into (sorted-map))
          (write-deps-file))))
 
+(defn diff-cmd []
+  (let [{:keys [deps]} (read-deps-file)
+        orig (find-pantheon-deps deps)
+        latest (find-latest-pantheon-deps deps)]
+    (diff orig latest)))
+
 (def cli-options
   [["-r" "--resolve"]
    ["-f" "--flatten"]
    ["-u" "--upgrade"]
-   ["-d" "--diff"]
    ["-d" "--diff"]
    ["-h" "--help"]])
 
@@ -122,11 +141,14 @@
 
 (defn -main [& args]
   (let [{:keys [options]} (parse-opts args cli-options)
-        {:keys [resolve upgrade flatten]} options]
+        {:keys [resolve upgrade
+                flatten diff]} options]
     (when resolve
       (prn-edn (resolve-cmd)))
     (when flatten
       (prn-edn (flatten-cmd)))
     (when upgrade
       (upgrade-cmd)
-      (println "Wrote deps.edn"))))
+      (println "Wrote deps.edn"))
+    (when diff
+      (prn-edn (diff-cmd)))))
