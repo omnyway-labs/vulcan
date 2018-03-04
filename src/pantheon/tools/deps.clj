@@ -92,7 +92,13 @@
     (->> (find-latest-pantheon-deps flat-deps)
          (merge flat-deps))))
 
-(defn diff* [old new]
+(defn diff-dep
+  "Takes a diff of two dep maps
+  (diff-dep {:a {:tag 1.0 :time x}
+            {:a {:tag 2.0 :time y)
+  => {:a {1.0 x 2.0 y}
+  returns nil if the tags are the same"
+  [old new]
   (letfn [(find [m k at]
             (get-in m [k at]))
           (same? [k]
@@ -129,7 +135,7 @@
   (let [{:keys [deps]} (read-deps-file)
         orig     (find-pantheon-deps deps)
         latest   (find-latest-pantheon-deps deps)]
-    (diff* orig latest)))
+    (diff-dep  orig latest)))
 
 (defcommand
   ^{:alias "latest"
