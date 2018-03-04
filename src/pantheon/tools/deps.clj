@@ -138,9 +138,9 @@
     (diff-dep  orig latest)))
 
 (defcommand
-  ^{:alias "latest"
-    :doc   "Find latest Pantheon Tags"}
-  latest [opts]
+  ^{:alias "resolve"
+    :doc   "Find and resolve latest Pantheon Tags"}
+  resolve [opts]
   (u/prn-edn (do-find-latest-deps)))
 
 (defcommand
