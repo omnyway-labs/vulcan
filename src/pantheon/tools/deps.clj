@@ -130,8 +130,7 @@
            (merge deps (find-latest-pantheon-deps deps)))
          (into (sorted-map))
          (assoc orig :deps)
-         (into (sorted-map))
-         (write-deps-file))))
+         (into (sorted-map)))))
 
 (defn do-diff []
   (let [{:keys [deps]} (read-deps-file)
@@ -153,18 +152,17 @@
 
 (defcommand
   ^{:alias "upgrade"
-    :opts  [["-f" "--flatten"]]
+    :opts  [["-f" "--flatten"]
+            ["-d" "--dry-run"]]
     :doc   "Upgrade Pantheon deps to latest tags"}
-  upgrade [opts]
-  (let [flatten? (get-in opts [:options :flatten])]
-    (println "Diffing..")
-    (let [df (do-diff)]
-    (u/prn-edn df)
-    (if (empty? df)
-      (println "Nothing to upgrade. All Pantheon deps are latest")
-      (do
-        (do-upgrade flatten?)
-        (println "Wrote deps.edn"))))))
+  upgrade [{:keys [options]}]
+  (let [{:keys [flatten dry-run]} options]
+    (let [deps (do-upgrade flatten)]
+      (if dry-run
+        (u/prn-edn deps)
+        (do
+          (write-deps-file deps)
+          (println "Wrote deps.edn"))))))
 
 (defcommand
   ^{:alias "diff"
