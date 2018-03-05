@@ -123,9 +123,11 @@
        (flatten-all-deps)
        (into (sorted-map))))
 
-(defn do-upgrade []
+(defn do-upgrade [flatten?]
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (flatten-latest-pantheon-deps deps)
+    (->> (if flatten?
+           (flatten-latest-pantheon-deps deps)
+           (merge deps (find-latest-pantheon-deps deps)))
          (into (sorted-map))
          (assoc orig :deps)
          (into (sorted-map))
@@ -151,28 +153,24 @@
 
 (defcommand
   ^{:alias "upgrade"
+    :opts  [["-f" "--flatten"]]
     :doc   "Upgrade Pantheon deps to latest tags"}
   upgrade [opts]
-  (println "Diffing..")
-  (let [df (do-diff)]
+  (let [flatten? (get-in opts [:options :flatten])]
+    (println "Diffing..")
+    (let [df (do-diff)]
     (u/prn-edn df)
     (if (empty? df)
       (println "Nothing to upgrade. All Pantheon deps are latest")
       (do
-        (do-upgrade)
-        (println "Wrote deps.edn")))))
+        (do-upgrade flatten?)
+        (println "Wrote deps.edn"))))))
 
 (defcommand
   ^{:alias "diff"
     :doc   "Show diff of current and upstream tags for Pantheon repos"}
   diff [opts]
   (u/prn-edn (do-diff)))
-
-(defcommand
-  ^{:alias "help"
-    :doc "Display basic documentation"}
-  help-command [opts]
-  (c/print-usage opts "Usage:"))
 
 (defn -main [& args]
   (c/process args))
