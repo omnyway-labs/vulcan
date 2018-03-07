@@ -9,5 +9,5 @@
   org.clojure/tools.nrepl      {:mvn/version "0.2.12"}
   org.clojure/tools.cli        {:mvn/version "0.3.5"}
   cider/cider-nrepl            {:mvn/version "0.16.0"}
-  metosin/scjsv                {:git/url "git@github.com:metosin/scjsv.git"
-                                :sha     "5ceb88837e36fdc93dcd61bdf9a42a6eeb971f16"}}}
+  me.raynes/fs                 {:mvn/version "1.4.6"}
+  metosin/scjsv                {:mvn/version "0.4.1"}}}

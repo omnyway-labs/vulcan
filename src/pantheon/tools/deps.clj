@@ -10,7 +10,8 @@
    [clojure.tools.gitlibs :as gl]
    [clojure.tools.gitlibs.impl :as impl]
    [pantheon.tools.commands :refer [defcommand] :as c]
-   [pantheon.tools.util :as u])
+   [pantheon.tools.util :as u]
+   [pantheon.tools.deps.pack :as pack])
   (:import
    [clojure.lang ExceptionInfo]
    [java.io PushbackReader]
@@ -71,7 +72,8 @@
 (defn make-dep [dep]
   (-> dep
       (select-keys [:mvn/version :git/url :local/root
-                    :sha :exclusions :dependents :time :tag])
+                    :sha :exclusions :dependents :time :tag
+                    :deps/manifest])
       (update-in [:dependents] (partial (comp vec distinct)))
       (u/remove-nil-entries)))
 
@@ -138,6 +140,12 @@
         latest   (find-latest-pantheon-deps deps)]
     (diff-dep  orig latest)))
 
+(defn do-pack []
+  (->> (read-deps-file)
+       :deps
+       (pack/resolve-deps)
+       (pack/copy-deps)))
+
 (defcommand
   ^{:alias "latest"
     :doc   "Find and resolve latest Pantheon Tags"}
@@ -169,6 +177,13 @@
     :doc   "Show diff of current and upstream tags for Pantheon repos"}
   diff [opts]
   (u/prn-edn (do-diff)))
+
+(defcommand
+  ^{:alias "pack"
+    :doc   "Packs Git and Jar dependencies"}
+  pack [opts]
+  (do-pack)
+  (println "Copied all deps to lib/"))
 
 (defn -main [& args]
   (c/process args))
