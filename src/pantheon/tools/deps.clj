@@ -72,8 +72,7 @@
 (defn make-dep [dep]
   (-> dep
       (select-keys [:mvn/version :git/url :local/root
-                    :sha :exclusions :dependents :time :tag
-                    :deps/manifest])
+                    :sha :exclusions :dependents :time :tag])
       (update-in [:dependents] (partial (comp vec distinct)))
       (u/remove-nil-entries)))
 
