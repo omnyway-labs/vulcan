@@ -31,7 +31,7 @@
 (defn resolve-deps [deps]
   (->> (deps/resolve-deps
         {:deps      deps
-         :mvn/repos mvn/standard-repos} nil)
+        :mvn/repos mvn/standard-repos} nil)
        (map as-dep)))
 
 (defn make-path [type path]
@@ -57,3 +57,15 @@
 (defn copy-deps [deps]
   (doseq [dep deps]
     (copy-dep dep)))
+
+(defn make-classpath []
+  (let [gits (fs/list-dir "lib/git")
+        jars (fs/list-dir "lib/jar")
+        as-jar-path (fn [path]
+                      (format "lib/jar/%s.jar" (fs/name path)))
+        as-git-path (fn [path]
+                      (format "lib/git/%s/src" (fs/name path)))]
+    (->> (concat
+         (map as-jar-path jars)
+         (map as-git-path gits))
+        (str/join ":"))))

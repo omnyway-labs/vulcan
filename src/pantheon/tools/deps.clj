@@ -183,7 +183,14 @@
     :doc   "Packs Git and Jar dependencies"}
   pack [opts]
   (do-pack)
-  (println "Copied all deps to lib/"))
+  (spit ".classpath" (pack/make-classpath))
+  (println "Copied deps to lib and wrote .classpath"))
+
+(defcommand
+  ^{:alias "classpath"
+    :doc   "Print the Pack classpath"}
+  classpath [opts]
+  (println (pack/make-classpath)))
 
 (defn -main [& args]
   (c/process args))
