@@ -6,7 +6,7 @@
 
 (defn make-validator [swagger-json-schema]
   (-> (slurp swagger-json-schema)
-      json-validator))
+      s/json-validator))
 
 (defn do-validate [swagger-file schema-file]
   (let [swagger-json (slurp swagger-file)
@@ -17,9 +17,9 @@
       (System/exit 1))))
 
 (defcommand
-  {:alias "validate"
+  ^{:alias "validate"
    :description "Validate Swagger given a swagger schema"}
-  validate []
+  validate [{:keys [options]}]
   (do-validate "swagger.json" "etc/swagger-schema.json"))
 
 (defn -main [& args]

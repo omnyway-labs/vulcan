@@ -10,4 +10,4 @@
   org.clojure/tools.cli        {:mvn/version "0.3.5"}
   cider/cider-nrepl            {:mvn/version "0.16.0"}
   metosin/scjsv                {:git/url "git@github.com:metosin/scjsv.git"
-                                :sha     "2c65d65a4b8776742c9e26bbb395a0f31fff2872"}}}
+                                :sha     "5ceb88837e36fdc93dcd61bdf9a42a6eeb971f16"}}}
