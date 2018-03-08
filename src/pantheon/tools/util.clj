@@ -96,3 +96,13 @@
 (defn prn-edn [edn]
   (binding [*print-dup* true]
     (pprint/pprint edn)))
+
+(defn rmerge
+  "Recursive merge of the provided maps. e.g.,
+
+  (rmerge {:foo {:bar {:baz 1}}} {:foo {:bar {:quux 2}}})
+  => {:foo {:bar {:baz 1, :quux 2}}}"
+  [& maps]
+  (if (every? map? maps)
+    (apply merge-with rmerge maps)
+    (last maps)))

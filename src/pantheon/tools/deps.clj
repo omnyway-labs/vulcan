@@ -29,15 +29,25 @@
 (defn get-repos []
   (merge mvn/standard-repos @extra-repos))
 
-(defn read-deps-file []
-  (with-open [rdr (-> "deps.edn" io/reader (PushbackReader.))]
-    (edn/read rdr)))
+(defn read-deps-file
+  ([] (read-deps-file "deps.edn"))
+  ([deps-file]
+   (with-open [rdr (-> deps-file
+                       io/reader
+                       (PushbackReader.))]
+     (edn/read rdr))))
 
-(defn write-deps-file [data]
-  (with-open [w (io/writer "deps.edn")]
-    (binding [*out* w
-              *print-dup* true]
-      (pprint/pprint data))))
+(def global-deps-file
+  (->> (System/getenv "HOME")
+       (format "%s/.clojure/deps.edn")))
+
+(defn write-deps-file
+  ([data] (write-deps-file data "deps.edn"))
+  ([data f]
+   (with-open [w (io/writer f)]
+     (binding [*out* w
+               *print-dup* true]
+       (pprint/pprint data)))))
 
 (defn find-pantheon-deps [deps]
   (->> deps
@@ -59,6 +69,11 @@
 (defn sort-tags [^RevWalk walk tags]
   (->> (map #(tag-info walk %) tags)
        (sort-by :time)))
+
+(defn resolve-master [url]
+  {:git/url url
+   :sha     (gl/resolve url "master")
+   :tag     "master"})
 
 (defn find-latest-tag
   "Find the latest tag for given git repo"
@@ -158,6 +173,18 @@
        (pack/resolve-deps)
        (pack/copy-deps)))
 
+(defn do-self-update []
+  (let [repo "omnypay/pantheon-dev-tools"
+        url  (format "git@github.com:%s.git" repo)
+        dep  (resolve-master url)]
+    (pprint/pprint dep)
+    (-> (read-deps-file global-deps-file)
+        (u/rmerge
+         {:aliases
+          {:deps
+           {:extra-deps {(symbol repo) dep}
+            :main-opts  ["-m" "pantheon.tools.deps"]}}}))))
+
 (defn find-culprits []
   (->> (read-deps-file)
        :deps
@@ -193,6 +220,7 @@
   ^{:alias "diff"
     :doc   "Show diff of current and upstream tags for Pantheon repos"}
   diff [opts]
+  (prn :a)
   (u/prn-edn (do-diff)))
 
 (defcommand
@@ -211,9 +239,15 @@
 
 (defcommand
   ^{:alias "culprits"
-    :doc   "Dependencies which "}
+    :doc   "Dependencies which are aot'd or have duplicate namespaces"}
   culprits [opts]
   (u/prn-edn (find-culprits)))
+
+(defcommand
+  ^{:alias "self-update"
+    :doc   "Update pantheon-dev-tools to latest master SHA"}
+  self-update [opts]
+  (write-deps-file (do-self-update) global-deps-file))
 
 (defn -main [& args]
   (c/process args))
