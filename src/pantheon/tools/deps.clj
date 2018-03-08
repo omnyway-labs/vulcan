@@ -20,6 +20,15 @@
    [org.eclipse.jgit.util RefMap]
    [org.eclipse.jgit.revwalk RevWalk]))
 
+(def extra-repos (atom nil))
+
+(defn set-extra-repos! [deps]
+  (reset! extra-repos (:mvn/repos deps))
+  deps)
+
+(defn get-repos []
+  (merge mvn/standard-repos @extra-repos))
+
 (defn read-deps-file []
   (with-open [rdr (-> "deps.edn" io/reader (PushbackReader.))]
     (edn/read rdr)))
@@ -83,7 +92,7 @@
    Latest version in a conflict, wins"
   [deps]
   (->> (deps/resolve-deps {:deps deps
-                           :mvn/repos mvn/standard-repos} nil)
+                           :mvn/repos (get-repos)} nil)
        (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
 
 (defn find-latest-pantheon-deps
@@ -123,12 +132,14 @@
 
 (defn do-flatten []
   (->> (read-deps-file)
+       (set-extra-repos!)
        :deps
        (flatten-all-deps)
        (into (sorted-map))))
 
 (defn do-upgrade [flatten?]
   (let [{:keys [deps] :as orig} (read-deps-file)]
+    (set-extra-repos! orig)
     (->> (if flatten?
            (flatten-latest-pantheon-deps deps)
            (merge deps (find-latest-pantheon-deps deps)))
