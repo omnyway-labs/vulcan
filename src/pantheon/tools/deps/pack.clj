@@ -54,13 +54,19 @@
     (copy-dep dep)))
 
 (defn make-classpath []
-  (let [gits (fs/list-dir "lib/git")
-        jars (fs/list-dir "lib/jar")
-        as-jar-path (fn [path]
-                      (format "lib/jar/%s.jar" (fs/name path)))
-        as-git-path (fn [path]
-                      (format "lib/git/%s/src" (fs/name path)))]
+  (let [gits           (fs/list-dir "lib/git")
+        jars           (fs/list-dir "lib/jar")
+        as-jar-path    (fn [path]
+                         (format "lib/jar/%s.jar" (fs/name path)))
+        as-git-path    (fn [path]
+                         (format "lib/git/%s/src" (fs/name path)))
+        as-res-path    (fn [path]
+                         (format "lib/git/%s/resources" (fs/name path)))
+        as-static-path (fn [path]
+                         (format "lib/git/%s/html/pages" (fs/name path)))]
     (->> (concat
          (map as-jar-path jars)
-         (map as-git-path gits))
+         (map as-git-path gits)
+         (map as-res-path gits)
+         (map as-static-path gits))
         (str/join ":"))))
