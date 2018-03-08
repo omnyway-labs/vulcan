@@ -148,6 +148,11 @@
        (pack/resolve-deps)
        (pack/copy-deps)))
 
+(defn find-culprits []
+  (->> (read-deps-file)
+       :deps
+       (culprit/find-aot-jars)))
+
 (defcommand
   ^{:alias "latest"
     :doc   "Find and resolve latest Pantheon Tags"}
@@ -193,6 +198,12 @@
     :doc   "Print the Pack classpath"}
   classpath [opts]
   (println (pack/make-classpath)))
+
+(defcommand
+  ^{:alias "culprits"
+    :doc   "Dependencies which "}
+  culprits [opts]
+  (u/prn-edn (find-culprits)))
 
 (defn -main [& args]
   (c/process args))
