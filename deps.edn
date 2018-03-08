@@ -8,6 +8,7 @@
                                               ch.qos.logback/logback-classic]}
   org.clojure/tools.nrepl      {:mvn/version "0.2.12"}
   org.clojure/tools.cli        {:mvn/version "0.3.5"}
+  org.clojure/tools.reader     {:mvn/version "1.2.1"}
   cider/cider-nrepl            {:mvn/version "0.16.0"}
   me.raynes/fs                 {:mvn/version "1.4.6"}
   metosin/scjsv                {:mvn/version "0.4.1"}}}
