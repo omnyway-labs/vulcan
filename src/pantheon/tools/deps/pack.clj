@@ -61,12 +61,9 @@
         as-git-path    (fn [path]
                          (format "lib/git/%s/src" (fs/name path)))
         as-res-path    (fn [path]
-                         (format "lib/git/%s/resources" (fs/name path)))
-        as-static-path (fn [path]
-                         (format "lib/git/%s/html/pages" (fs/name path)))]
+                         (format "lib/git/%s/resources" (fs/name path)))]
     (->> (concat
          (map as-jar-path jars)
          (map as-git-path gits)
-         (map as-res-path gits)
-         (map as-static-path gits))
+         (map as-res-path gits))
         (str/join ":"))))
