@@ -5,13 +5,15 @@
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
    [clojure.tools.deps.alpha :as deps]
+   [clojure.tools.deps.alpha.util.maven :as mvn]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.tools.gitlibs :as gl]
    [clojure.tools.gitlibs.impl :as impl]
    [pantheon.tools.commands :refer [defcommand] :as c]
    [pantheon.tools.util :as u]
-   [pantheon.tools.deps.pack :as pack])
+   [pantheon.tools.deps.pack :as pack]
+   [pantheon.tools.deps.culprit :as culprit])
   (:import
    [clojure.lang ExceptionInfo]
    [java.io PushbackReader]
@@ -80,7 +82,8 @@
   "Recursively finds the depedencies and flattens them.
    Latest version in a conflict, wins"
   [deps]
-  (->> (deps/resolve-deps {:deps deps} nil)
+  (->> (deps/resolve-deps {:deps deps
+                           :mvn/repos mvn/standard-repos} nil)
        (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
 
 (defn find-latest-pantheon-deps
