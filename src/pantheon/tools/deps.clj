@@ -155,7 +155,6 @@
 
 (defn do-pack []
   (->> (read-deps-file)
-       :deps
        (pack/resolve-deps)
        (pack/copy-deps)))
 

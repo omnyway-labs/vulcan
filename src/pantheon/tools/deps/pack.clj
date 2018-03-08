@@ -3,18 +3,12 @@
    [clojure.string :as str]
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
-   [clojure.tools.reader.edn :as edn]
    [clojure.tools.deps.alpha :as deps]
    [clojure.tools.deps.alpha.util.maven :as mvn]
    [me.raynes.fs :as fs]
    [pantheon.tools.util :as u])
   (:import
-   [clojure.lang ExceptionInfo]
-   [java.io PushbackReader]))
-
-(defn read-deps-file []
-  (with-open [rdr (-> "deps.edn" io/reader (PushbackReader.))]
-    (edn/read rdr)))
+   [clojure.lang ExceptionInfo]))
 
 (defn git? [dep-map]
   (some-> (:git/url dep-map)))
@@ -28,11 +22,12 @@
              (str/split #"/")
              (last))))
 
-(defn resolve-deps [deps]
-  (->> (deps/resolve-deps
-        {:deps      deps
-        :mvn/repos mvn/standard-repos} nil)
-       (map as-dep)))
+(defn resolve-deps [{:keys [deps] :as f}]
+  (let [repos (merge mvn/standard-repos (:mvn/repos f))]
+    (->> (deps/resolve-deps
+          {:deps      deps
+           :mvn/repos  repos} nil)
+         (map as-dep))))
 
 (defn make-path [type path]
   (condp = type
