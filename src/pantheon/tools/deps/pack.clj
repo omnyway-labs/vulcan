@@ -53,17 +53,18 @@
   (doseq [dep deps]
     (copy-dep dep)))
 
+(defn make-git-classpath [path]
+  [(format "lib/git/%s/src" (fs/name path))
+   (format "lib/git/%s/resources" (fs/name path))])
+
+(defn make-jar-classpath [path]
+  (format "lib/jar/%s.jar" (fs/name path)))
+
 (defn make-classpath []
   (let [gits           (fs/list-dir "lib/git")
-        jars           (fs/list-dir "lib/jar")
-        as-jar-path    (fn [path]
-                         (format "lib/jar/%s.jar" (fs/name path)))
-        as-git-path    (fn [path]
-                         (format "lib/git/%s/src" (fs/name path)))
-        as-res-path    (fn [path]
-                         (format "lib/git/%s/resources" (fs/name path)))]
+        jars           (fs/list-dir "lib/jar")]
     (->> (concat
-         (map as-jar-path jars)
-         (map as-git-path gits)
-         (map as-res-path gits))
-        (str/join ":"))))
+          (map make-jar-classpath jars)
+          (map make-git-classpath gits))
+         flatten
+         (str/join ":"))))
