@@ -36,9 +36,8 @@
             (format "    %2s %-27s %s"
                     (first opt)
                     (if (< 2 (count opt)) (second opt) "")
-                    (last opt)))))
-       (println)))
-   (println "\n")))
+                    (last opt)))))))
+   (println)))
 
 (defn get-options [command]
   (-> (find-handler command) meta :opts))

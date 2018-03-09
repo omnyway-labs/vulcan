@@ -75,6 +75,13 @@
    :sha     (gl/resolve url "master")
    :tag     "master"})
 
+(defn resolve-local [dep-name dep]
+  (merge {:local/root (str "../" (name dep-name))} dep))
+
+(defn localize-pantheon-deps
+  [deps]
+  (reduce-kv #(assoc %1 %2 (resolve-local %2 %3)) {} deps))
+
 (defn find-latest-tag
   "Find the latest tag for given git repo"
   [url]
@@ -91,7 +98,8 @@
   [dep]
   (let [url (:git/url dep)
         {:keys [time] :as latest} (find-latest-tag url)]
-    (merge dep latest
+    (merge (dissoc dep :local/root)
+           latest
            (when time
              {:time (u/secs->timestamp time)}))))
 
@@ -190,6 +198,23 @@
        :deps
        (culprit/find-aot-jars)))
 
+(defn do-checkout [project]
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        project (symbol (str "omnypay/" project))
+        local-deps (if project (select-keys deps [project]) deps)]
+    (->> (find-pantheon-deps local-deps)
+         (localize-pantheon-deps)
+         (into (sorted-map))
+         u/spy
+         (merge deps)
+         (assoc orig :deps)
+         (into (sorted-map)))))
+
+(defn do-make-classpath []
+  (-> (read-deps-file)
+       :paths
+       (pack/make-classpath)))
+
 (defcommand
   ^{:alias "latest"
     :doc   "Find and resolve latest Pantheon Tags"}
@@ -216,16 +241,10 @@
           (write-deps-file deps)
           (println "Wrote deps.edn"))))))
 
-(defn do-make-classpath []
-  (-> (read-deps-file)
-       :paths
-       (pack/make-classpath)))
-
 (defcommand
   ^{:alias "diff"
     :doc   "Show diff of current and upstream tags for Pantheon repos"}
   diff [opts]
-  (prn :a)
   (u/prn-edn (do-diff)))
 
 (defcommand
@@ -253,6 +272,14 @@
     :doc   "Update pantheon-dev-tools to latest master SHA"}
   self-update [opts]
   (write-deps-file (do-self-update) global-deps-file))
+
+(defcommand
+  ^{:alias "checkout"
+    :opts  [["-p" "--project PROEJCT" "Pantheon Dependency"]]
+    :doc   "Checkout and link local git repos"}
+  checkout [{:keys [options]}]
+  (let [{:keys [project]} options]
+    (write-deps-file (do-checkout project))))
 
 (defn -main [& args]
   (c/process args))

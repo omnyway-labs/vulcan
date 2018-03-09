@@ -106,3 +106,7 @@
   (if (every? map? maps)
     (apply merge-with rmerge maps)
     (last maps)))
+
+(defn spy [edn]
+  (prn-edn edn)
+  edn)
