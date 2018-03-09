@@ -216,6 +216,11 @@
           (write-deps-file deps)
           (println "Wrote deps.edn"))))))
 
+(defn do-make-classpath []
+  (-> (read-deps-file)
+       :paths
+       (pack/make-classpath)))
+
 (defcommand
   ^{:alias "diff"
     :doc   "Show diff of current and upstream tags for Pantheon repos"}
@@ -228,14 +233,14 @@
     :doc   "Packs Git and Jar dependencies"}
   pack [opts]
   (do-pack)
-  (spit ".classpath" (pack/make-classpath))
+  (spit ".classpath" (do-make-classpath))
   (println "Copied deps to lib and wrote .classpath"))
 
 (defcommand
   ^{:alias "classpath"
     :doc   "Print the Pack classpath"}
   classpath [opts]
-  (println (pack/make-classpath)))
+  (println (do-make-classpath)))
 
 (defcommand
   ^{:alias "culprits"
