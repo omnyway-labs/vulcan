@@ -101,14 +101,13 @@
 (defn do-make-classpath []
   (-> (read-deps-file)
        :paths
-       (pack/make-classpath)))
+       (pack/make-all-classpath)))
 
 (defn do-pack []
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
-    (->> (read-deps-file)
-         (pack/resolve-deps)
-         (pack/copy-deps))))
+    (-> (up/resolve-deps deps repos)
+        (pack/copy-deps))))
 
 (defcommand
   ^{:alias "flatten"

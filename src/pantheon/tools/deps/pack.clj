@@ -3,78 +3,53 @@
    [clojure.string :as str]
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
-   [clojure.tools.deps.alpha :as deps]
-   [clojure.tools.deps.alpha.util.maven :as mvn]
    [me.raynes.fs :as fs]
-   [pantheon.tools.util :as u])
-  (:import
-   [clojure.lang ExceptionInfo]))
+   [pantheon.tools.util :as u]))
 
-(defn git? [dep-map]
-  (some-> (:git/url dep-map)))
+(defn find-procurer [dep]
+  (cond
+    (some-> (:git/url dep)) :git
+    (some-> (:mvn/version dep)) :jar))
 
-(defn jar? [dep-map]
-  (some-> (:mvn/version dep-map)))
-
-(defn as-dep [[k v]]
-  (assoc v :name
-         (-> (name k)
-             (str/split #"/")
-             (last))))
-
-(defn resolve-deps [{:keys [deps] :as f}]
-  (let [repos (merge mvn/standard-repos (:mvn/repos f))]
-    (->> (deps/resolve-deps
-          {:deps      deps
-           :mvn/repos  repos} nil)
-         (map as-dep))))
+(defn root [type]
+  (format "lib/%s" (name type)))
 
 (defn make-path [type path]
   (condp = type
-    :git (format "lib/git/%s" path)
-    :jar (format "lib/jar/%s.jar" (fs/name path))))
+    :git (format "%s/%s" (root type) path)
+    :jar (format "%s/%s.jar" (root type) (fs/name path))))
 
-(defn cp-jars [{:keys [paths name]}]
-  (fs/mkdirs "lib/jar")
+(defmulti copy (fn [dep] (find-procurer dep)))
+
+(defmethod copy :git [dep]
+  (->> (make-path :git (:name dep))
+       (fs/copy-dir (:deps/root dep))))
+
+(defmethod copy :jar [{:keys [paths] :as dep}]
+  (fs/mkdirs (root :jar))
   (doseq [path paths]
-    (fs/copy path (make-path :jar path)))
-
-(defn cp-git [dep]
-  (fs/copy-dir (:deps/root dep)
-               (make-path :git (:name dep)))))
-
-(defn copy-dep [dep]
-  (cond
-    (git? dep) (cp-git dep)
-    (jar? dep) (cp-jars dep)
-    :else :nop))
+    (fs/copy path (make-path :jar path))))
 
 (defn copy-deps [deps]
   (doseq [dep deps]
-    (copy-dep dep)))
+    (copy dep)))
 
-(defn make-git-classpath [git-path resource-paths]
-  (let [resource-paths (-> resource-paths (conj "src") distinct)]
-    (map #(format "lib/git/%s/%s" (fs/name git-path) %) resource-paths)))
+(defmulti make-classpath (fn [type path _] type))
 
-(defn make-jar-classpath [path]
-  (format "lib/jar/%s.jar" (fs/name path)))
+(defmethod make-classpath :git [type path resource-paths]
+  (->> (conj resource-paths "src")
+       (distinct)
+       (map #(format "%s/%s/%s" (root type) (fs/name path) %))))
 
-(defn find-all-git-paths [resource-paths]
-  (->> (fs/list-dir "lib/git")
-       (map #(make-git-classpath % resource-paths))))
+(defmethod make-classpath :jar [_ path _]
+  (format "%s/%s.jar" (root :jar) (fs/name path)))
 
-(defn find-all-jar-paths []
-  )
+(defn find-all-paths [type resource-paths]
+  (->> (fs/list-dir (root type))
+       (map #(make-classpath type % resource-paths))))
 
-
-(defn make-classpath [resource-paths]
-  (let [jars (fs/list-dir "lib/jar")]
-    (->> (concat
-          (map make-jar-classpath jars)
-          (find-all-git-paths resource-paths))
-         flatten
-         (str/join ":"))))
-
-(defn list-resources []
-  )
+(defn make-all-classpath [resource-paths]
+  (->> (concat (find-all-paths :git resource-paths)
+               (find-all-paths :jar resource-paths))
+       (flatten)
+       (str/join ":")))
