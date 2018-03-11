@@ -4,30 +4,15 @@
    [clojure.string :as str]
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
-   [clojure.tools.deps.alpha :as deps]
-   [clojure.tools.deps.alpha.util.maven :as mvn]
    [clojure.tools.reader.edn :as edn]
-   [clojure.tools.cli :refer [parse-opts]]
-   [clojure.tools.gitlibs :as gl]
-   [clojure.tools.gitlibs.impl :as impl]
-   [pantheon.tools.commands :refer [defcommand] :as c]
+   [clojure.tools.deps.alpha.util.maven :as mvn]
    [pantheon.tools.util :as u]
-   [pantheon.tools.deps.pack :as pack]
-   [pantheon.tools.deps.culprit :as culprit])
+   [pantheon.tools.commands :refer [defcommand] :as c]
+   [pantheon.tools.deps.upgrade :as up]
+   [pantheon.tools.deps.culprit :as culprit]
+   [pantheon.tools.deps.pack :as pack])
   (:import
-   [clojure.lang ExceptionInfo]
-   [java.io PushbackReader]
-   [org.eclipse.jgit.util RefMap]
-   [org.eclipse.jgit.revwalk RevWalk]))
-
-(def extra-repos (atom nil))
-
-(defn set-extra-repos! [deps]
-  (reset! extra-repos (:mvn/repos deps))
-  deps)
-
-(defn get-repos []
-  (merge mvn/standard-repos @extra-repos))
+   [java.io PushbackReader]))
 
 (defn read-deps-file
   ([] (read-deps-file "deps.edn"))
@@ -37,9 +22,17 @@
                        (PushbackReader.))]
      (edn/read rdr))))
 
+(defn build-repos [repos]
+  (merge mvn/standard-repos repos))
+
 (def global-deps-file
   (->> (System/getenv "HOME")
        (format "%s/.clojure/deps.edn")))
+
+(defn find-pantheon-deps [deps]
+  (->> deps
+       (filter #(str/starts-with? (key %) "omnypay"))
+       (into {})))
 
 (defn write-deps-file
   ([data] (write-deps-file data "deps.edn"))
@@ -54,138 +47,45 @@
        (filter #(str/starts-with? (key %) "omnypay"))
        (into {})))
 
-(defn make-git-db [url]
-  (-> url
-      impl/ensure-git-dir
-      impl/git-repo))
-
-(defn tag-info [^RevWalk walk ^RefMap tag]
-  (let [commit (->> (.. tag getValue getObjectId)
-                    (.parseCommit walk))]
-    {:time    (.getCommitTime commit)
-     :tag     (.getKey tag)
-     :sha     (.getName commit)}))
-
-(defn sort-tags [^RevWalk walk tags]
-  (->> (map #(tag-info walk %) tags)
-       (sort-by :time)))
-
-(defn resolve-master [url]
-  {:git/url url
-   :sha     (gl/resolve url "master")
-   :tag     "master"})
-
-(defn resolve-local [dep-name dep]
-  (merge {:local/root (str "../" (name dep-name))} dep))
-
-(defn localize-pantheon-deps
-  [deps]
-  (reduce-kv #(assoc %1 %2 (resolve-local %2 %3)) {} deps))
-
-(defn find-latest-tag
-  "Find the latest tag for given git repo"
-  [url]
-  (when url
-    (let [db   (make-git-db url)
-          walk (RevWalk. db)]
-      (->> (.getTags db)
-           (sort-tags walk)
-           (last)))))
-
-(defn make-pantheon-dep
-  "Given a dependency map returns the pantheon repository
-   with the latest tag and corresponding SHA"
-  [dep]
-  (let [url (:git/url dep)
-        {:keys [time] :as latest} (find-latest-tag url)]
-    (merge (dissoc dep :local/root)
-           latest
-           (when time
-             {:time (u/secs->timestamp time)}))))
-
-(defn make-dep [dep]
-  (-> dep
-      (select-keys [:mvn/version :git/url :local/root
-                    :sha :exclusions :dependents :time :tag])
-      (update-in [:dependents] (partial (comp vec distinct)))
-      (u/remove-nil-entries)))
-
-(defn flatten-all-deps
-  "Recursively finds the depedencies and flattens them.
-   Latest version in a conflict, wins"
-  [deps]
-  (->> (deps/resolve-deps {:deps deps
-                           :mvn/repos (get-repos)} nil)
-       (reduce-kv #(assoc %1 %2 (make-dep %3)) {})))
-
-(defn find-latest-pantheon-deps
-  [deps]
-  (->> (find-pantheon-deps deps)
-       (reduce-kv #(assoc %1 %2 (make-pantheon-dep %3)) {})))
-
-(defn flatten-latest-pantheon-deps [deps]
-  (let [flat-deps (flatten-all-deps deps)]
-    (->> (find-latest-pantheon-deps flat-deps)
-         (merge flat-deps))))
-
-(defn diff-dep
-  "Takes a diff of two dep maps
-  (diff-dep {:a {:tag 1.0 :time x}}
-            {:a {:tag 2.0 :time y}})
-  => {:a {1.0 x 2.0 y}
-  returns {} if the tags are the same"
-  [old new]
-  (letfn [(find [m k at]
-            (get-in m [k at]))
-          (same? [k]
-            (= (find old k :tag)
-               (find new k :tag)))
-          (as-diff [k]
-            (when-not (same? k)
-              {k {(find old k :tag) (find old k :time)
-                  (find new k :tag) (find new k :time)}}))]
-    (->> (keys old)
-         (map as-diff)
-         (into {}))))
-
-(defn do-find-latest-deps []
-  (-> (read-deps-file)
-      :deps
-      (find-latest-pantheon-deps)))
-
-(defn do-flatten []
-  (->> (read-deps-file)
-       (set-extra-repos!)
-       :deps
-       (flatten-all-deps)
+(defn ensure-sorted [orig new]
+  (->> (into (sorted-map) new)
+       (assoc orig :deps)
        (into (sorted-map))))
 
+(defn do-flatten []
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        repos (build-repos (:mvn/repos orig))]
+    (-> (up/flatten deps repos)
+        (into (sorted-map)))))
+
 (defn do-upgrade [flatten?]
-  (let [{:keys [deps] :as orig} (read-deps-file)]
-    (set-extra-repos! orig)
-    (->> (if flatten?
-           (flatten-latest-pantheon-deps deps)
-           (merge deps (find-latest-pantheon-deps deps)))
-         (into (sorted-map))
-         (assoc orig :deps)
-         (into (sorted-map)))))
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        repos (build-repos (:mvn/repos orig))]
+    (->> (find-pantheon-deps deps)
+         (up/upgrade flatten? repos deps)
+         (ensure-sorted orig))))
 
 (defn do-diff []
-  (let [{:keys [deps]} (read-deps-file)
-        orig     (find-pantheon-deps deps)
-        latest   (find-latest-pantheon-deps deps)]
-    (diff-dep  orig latest)))
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        repos (build-repos (:mvn/repos orig))]
+    (->> (find-pantheon-deps deps)
+         (up/diff repos deps))))
 
-(defn do-pack []
-  (->> (read-deps-file)
-       (pack/resolve-deps)
-       (pack/copy-deps)))
+(defn do-checkout [project]
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        project (symbol (str "omnypay/" project))
+        local-deps (if project (select-keys deps [project]) deps)]
+    (->> (find-pantheon-deps local-deps)
+         (up/checkout)
+         (merge deps)
+         u/spy
+         (ensure-sorted orig))))
 
 (defn do-self-update []
   (let [repo "omnypay/pantheon-dev-tools"
         url  (format "git@github.com:%s.git" repo)
-        dep  (resolve-master url)]
-    (pprint/pprint dep)
+        dep  (up/resolve-master url)]
+    (u/prn-edn dep)
     (-> (read-deps-file global-deps-file)
         (u/rmerge
          {:aliases
@@ -198,28 +98,17 @@
        :deps
        (culprit/find-aot-jars)))
 
-(defn do-checkout [project]
-  (let [{:keys [deps] :as orig} (read-deps-file)
-        project (symbol (str "omnypay/" project))
-        local-deps (if project (select-keys deps [project]) deps)]
-    (->> (find-pantheon-deps local-deps)
-         (localize-pantheon-deps)
-         (into (sorted-map))
-         u/spy
-         (merge deps)
-         (assoc orig :deps)
-         (into (sorted-map)))))
-
 (defn do-make-classpath []
   (-> (read-deps-file)
        :paths
        (pack/make-classpath)))
 
-(defcommand
-  ^{:alias "latest"
-    :doc   "Find and resolve latest Pantheon Tags"}
-  latest [opts]
-  (u/prn-edn (do-find-latest-deps)))
+(defn do-pack []
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        repos (build-repos (:mvn/repos orig))]
+    (->> (read-deps-file)
+         (pack/resolve-deps)
+         (pack/copy-deps))))
 
 (defcommand
   ^{:alias "flatten"
@@ -262,9 +151,9 @@
   (println (do-make-classpath)))
 
 (defcommand
-  ^{:alias "culprits"
-    :doc   "Dependencies which are aot'd or have duplicate namespaces"}
-  culprits [opts]
+  ^{:alias "culprit"
+    :doc   "List dependencies which are aot'd or have duplicate namespaces"}
+  culprit [opts]
   (u/prn-edn (find-culprits)))
 
 (defcommand

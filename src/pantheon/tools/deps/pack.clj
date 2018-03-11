@@ -60,11 +60,21 @@
 (defn make-jar-classpath [path]
   (format "lib/jar/%s.jar" (fs/name path)))
 
+(defn find-all-git-paths [resource-paths]
+  (->> (fs/list-dir "lib/git")
+       (map #(make-git-classpath % resource-paths))))
+
+(defn find-all-jar-paths []
+  )
+
+
 (defn make-classpath [resource-paths]
-  (let [gits           (fs/list-dir "lib/git")
-        jars           (fs/list-dir "lib/jar")]
+  (let [jars (fs/list-dir "lib/jar")]
     (->> (concat
           (map make-jar-classpath jars)
-          (map #(make-git-classpath % resource-paths) gits))
+          (find-all-git-paths resource-paths))
          flatten
          (str/join ":"))))
+
+(defn list-resources []
+  )
