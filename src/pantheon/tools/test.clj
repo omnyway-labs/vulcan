@@ -43,13 +43,11 @@
     :integration :secure})
 
 (defn maybe-run-test [{:keys [dry-run]} selector]
-  (let [opts {:include #{:test}
-              :exclude (disj selectors :test)}]
+  (let [opts {:include #{selector}
+              :exclude (disj selectors selector)}]
     (if dry-run
       (prn-test-namespaces opts)
-      (run-test
-       {:include #{selector}
-        :exclude (disj selectors selector)}))))
+      (run-test opts))))
 
 (defcommand
   ^{:alias "integration"
