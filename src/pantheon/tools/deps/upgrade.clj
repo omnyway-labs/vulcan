@@ -115,6 +115,6 @@
     (flatten-and-upgrade all-deps selected-deps repos)
     (merge all-deps (upgrade-to-latest selected-deps))))
 
-(defn diff [repos all-deps selected-deps]
+(defn diff [all-deps selected-deps]
   (->> (upgrade-to-latest selected-deps)
        (diff-dep selected-deps)))

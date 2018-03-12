@@ -75,10 +75,9 @@
          (ensure-sorted orig))))
 
 (defn do-diff []
-  (let [{:keys [deps] :as orig} (read-deps-file)
-        repos (build-repos (:mvn/repos orig))]
+  (let [{:keys [deps] :as orig} (read-deps-file)]
     (->> (find-pantheon-deps deps)
-         (up/diff repos deps))))
+         (up/diff deps))))
 
 (defn do-link [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
