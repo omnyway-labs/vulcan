@@ -9,6 +9,7 @@
    [pantheon.tools.util :as u]
    [pantheon.tools.commands :refer [defcommand] :as c]
    [pantheon.tools.deps.upgrade :as up]
+   [pantheon.tools.deps.link :as link]
    [pantheon.tools.deps.culprit :as culprit]
    [pantheon.tools.deps.pack :as pack])
   (:import
@@ -47,6 +48,14 @@
        (filter #(str/starts-with? (key %) "omnypay"))
        (into {})))
 
+(defn find-local-projects [project deps]
+  (let [project (when project
+                  (symbol (str "omnypay/" project)))
+        local-deps (if project
+                     (select-keys deps [project])
+                     deps)]
+    (find-pantheon-deps local-deps)))
+
 (defn ensure-sorted [orig new]
   (->> (into (sorted-map) new)
        (assoc orig :deps)
@@ -71,14 +80,20 @@
     (->> (find-pantheon-deps deps)
          (up/diff repos deps))))
 
-(defn do-checkout [project]
-  (let [{:keys [deps] :as orig} (read-deps-file)
-        project (symbol (str "omnypay/" project))
-        local-deps (if project (select-keys deps [project]) deps)]
-    (->> (find-pantheon-deps local-deps)
-         (up/checkout)
-         (merge deps)
+(defn do-link [project]
+  (let [{:keys [deps] :as orig} (read-deps-file)]
+    (->> (find-local-projects project deps)
+         (link/link)
          u/spy
+         (merge deps)
+         (ensure-sorted orig))))
+
+(defn do-unlink [project]
+  (let [{:keys [deps] :as orig} (read-deps-file)]
+    (->> (find-local-projects project deps)
+         (link/unlink)
+         u/spy
+         (merge deps)
          (ensure-sorted orig))))
 
 (defn do-self-update []
@@ -162,12 +177,20 @@
   (write-deps-file (do-self-update) global-deps-file))
 
 (defcommand
-  ^{:alias "checkout"
+  ^{:alias "link"
     :opts  [["-p" "--project PROEJCT" "Pantheon Dependency"]]
-    :doc   "Checkout and link local git repos"}
-  checkout [{:keys [options]}]
+    :doc   "link local git repos"}
+  link [{:keys [options]}]
   (let [{:keys [project]} options]
-    (write-deps-file (do-checkout project))))
+    (write-deps-file (do-link project))))
+
+(defcommand
+  ^{:alias "unlink"
+    :opts  [["-p" "--project PROEJCT" "Pantheon Dependency"]]
+    :doc   "unlink local git repos"}
+  unlink [{:keys [options]}]
+  (let [{:keys [project]} options]
+    (write-deps-file (do-unlink project))))
 
 (defn -main [& args]
   (c/process args))

@@ -11,7 +11,6 @@
    [org.eclipse.jgit.util RefMap]
    [org.eclipse.jgit.revwalk RevWalk]))
 
-
 (defn make-git-db [url]
   (-> url
       impl/ensure-git-dir
@@ -119,9 +118,3 @@
 (defn diff [repos all-deps selected-deps]
   (->> (upgrade-to-latest selected-deps)
        (diff-dep selected-deps)))
-
-(defn checkout [deps]
-  (letfn [(resolve-local [dep-name dep]
-            (merge {:local/root (str "../" (name dep-name))}
-                   dep))]
-    (reduce-kv #(assoc %1 %2 (resolve-local %2 %3)) {} deps)))
