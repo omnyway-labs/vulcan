@@ -9,4 +9,7 @@
   org.clojure/tools.cli        {:mvn/version "0.3.5"}
   org.clojure/tools.reader     {:mvn/version "1.2.1"}
   me.raynes/fs                 {:mvn/version "1.4.6"}
-  metosin/scjsv                {:mvn/version "0.4.1"}}}
+  metosin/scjsv                {:mvn/version "0.4.1"}
+  com.cognitect/test-runner
+  {:git/url "git@github.com:cognitect-labs/test-runner"
+   :sha     "5fb4fc46ad0bf2e0ce45eba5b9117a2e89166479"}}}
