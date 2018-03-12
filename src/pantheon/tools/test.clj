@@ -61,7 +61,7 @@
     :opts [["-d" "--dry-run"]]
     :doc   "Run unit tests"}
   unit [{:keys [options]}]
-  (maybe-run-test options :unit))
+  (maybe-run-test options :test))
 
 (defcommand
   ^{:alias "api"
