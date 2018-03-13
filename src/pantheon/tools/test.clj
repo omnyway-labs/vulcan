@@ -19,7 +19,9 @@
   (or (pos? fail) (pos? error)))
 
 (defn ns-filter [{:keys [namespace]}]
-  (fn [ns] (= namespace ns)))
+  (if namespace
+    #(= namespace %)
+    (constantly true)))
 
 (defn var-filter
   [{:keys [var include exclude]}]
