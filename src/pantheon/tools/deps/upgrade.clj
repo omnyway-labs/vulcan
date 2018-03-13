@@ -122,7 +122,8 @@
 (defn pull [deps repos]
   (deps/resolve-deps
    {:deps      deps
-    :mvn/repos  repos} nil))
+    :mvn/repos  repos} nil)
+  :ok)
 
 (defn pull-all [repos deps selected-deps]
   (as-> selected-deps d

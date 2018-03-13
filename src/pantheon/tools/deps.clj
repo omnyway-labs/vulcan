@@ -123,6 +123,14 @@
     (-> (up/resolve-deps deps repos)
         (pack/copy-deps))))
 
+(defn read-deps []
+  (let [{:keys [deps]
+         :as   orig} (read-deps-file)
+        repos      (build-repos (:mvn/repos orig))]
+    {:deps  deps
+     :repos repos
+     :orig  orig}))
+
 (defn pull
   "Pulls given projects.
   (pull)
@@ -135,20 +143,17 @@
      pulls latest sha of pantheon-modules
     (pull :pantheon-modules 0.1.30)"
   ([]
-   (let [{:keys [deps] :as orig} (read-deps-file)
-         repos (build-repos (:mvn/repos orig))]
-     (->> (find-pantheon-deps deps)
-          (up/pull-all repos deps))))
+   (let [{:keys [repos deps]} (read-deps)]
+     (->>  (find-pantheon-deps deps)
+           (up/pull-all repos deps))))
   ([deps]
    (when (map? deps)
-     (->> (-> (:mvn/repos read-deps-file)
-              (build-repos))
+     (->> (:repos (read-deps))
           (up/resolve-deps deps))))
   ([project version]
-   (let [{:keys [deps] :as orig} (read-deps-file)
-         repos (build-repos (:mvn/repos orig))
-         name (symbol (str "omnypay/" (name project)))
-         dep  (get deps name)]
+   (let [{:keys [repos deps]} (read-deps)
+         name  (symbol (str "omnypay/" (name project)))
+         dep   (get deps name)]
      (if (= :latest version)
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
