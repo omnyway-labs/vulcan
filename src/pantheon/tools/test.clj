@@ -28,9 +28,15 @@
     (doseq [n nses]
       (prn n))))
 
-(defn run-test [selectors]
+(def selectors
+  #{:api :scenario :fixme :integration-fixme
+    :integration :secure :concurrent :unit})
+
+(defn run-test [selector]
   (try
-    (let [result (runner/test selectors)]
+    (let [opts {:include (when selector #{selector})
+                :exclude (disj selectors selector)}
+          result (runner/test (u/remove-nil-entries opts))]
       (println result)
       (if (fail? result)
         (System/exit 1)
@@ -38,52 +44,40 @@
     (finally
       (shutdown-agents))))
 
-(def selectors
-  #{:api :test :scenario :fixme :integration-fixme
-    :integration :secure})
-
-(defn maybe-run-test [{:keys [dry-run]} selector]
-  (let [opts {:include #{selector}
-              :exclude (disj selectors selector)}]
-    (if dry-run
-      (prn-test-namespaces opts)
-      (run-test opts))))
-
 (defcommand
   ^{:alias "integration"
     :opts [["-d" "--dry-run"]]
     :doc   "Run Integration tests"}
   integration [{:keys [options]}]
-  (maybe-run-test options :integration))
+  (run-test :integration))
 
 (defcommand
   ^{:alias "unit"
     :opts [["-d" "--dry-run"]]
     :doc   "Run unit tests"}
   unit [{:keys [options]}]
-  (maybe-run-test options :test))
+  (run-test nil))
 
 (defcommand
   ^{:alias "api"
     :opts [["-d" "--dry-run"]]
     :doc   "Run API tests"}
   api [{:keys [options]}]
-  (maybe-run-test options :api))
+  (run-test :api))
 
 (defcommand
   ^{:alias "scenario"
     :opts [["-d" "--dry-run"]]
     :doc   "Run Scenario tests"}
   scenario [{:keys [options]}]
-  (maybe-run-test options :scenario))
+  (run-test :scenario))
 
 (defcommand
-  ^{:alias "ns"
-    :opts [["-n" "--namespace NAMESPACE" "Namespace"]]
-    :doc   "Run tests in a specific ns"}
-  ns [{:keys [options]}]
-  (run-test
-   {:namespace (symbol namespace)}))
+  ^{:alias "concurrent"
+    :opts [["-d" "--dry-run"]]
+    :doc   "Run Concurrent tests"}
+  concurrent [{:keys [options]}]
+  (run-test :concurrent))
 
 (defn -main [& args]
   (c/process args))
