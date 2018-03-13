@@ -118,3 +118,23 @@
 (defn diff [all-deps selected-deps]
   (->> (upgrade-to-latest selected-deps)
        (diff-dep selected-deps)))
+
+(defn pull [deps repos]
+  (deps/resolve-deps
+   {:deps      deps
+    :mvn/repos  repos} nil))
+
+(defn pull-all [repos deps selected-deps]
+  (as-> selected-deps d
+    (upgrade false repos deps d)
+    (pull d repos)))
+
+(defn pull-latest [deps repos]
+  (doseq [[name dep] deps]
+    (let [latest (make-latest-dep dep)]
+      (prn latest)
+      (pull {name latest} repos))))
+
+(defn pull-tag [name dep version repos]
+  (let [dep (merge dep {:tag version})]
+    (pull {name dep} repos)))
