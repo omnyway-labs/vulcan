@@ -93,9 +93,13 @@
 (defn omethods [obj]
   (map #(.getName %) (-> obj class .getMethods)))
 
-(defn prn-edn [edn]
-  (binding [*print-dup* true]
-    (pprint/pprint edn)))
+(defn prn-edn
+  ([edn]
+   (prn-edn edn *out*))
+  ([edn writer]
+   (binding [*print-dup* true
+             *print-namespace-maps* false]
+     (pprint/pprint edn writer))))
 
 (defn rmerge
   "Recursive merge of the provided maps. e.g.,
