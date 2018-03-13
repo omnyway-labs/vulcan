@@ -2,7 +2,6 @@
   (:refer-clojure :exclude [flatten resolve])
   (:require
    [clojure.string :as str]
-   [clojure.pprint :as pprint]
    [clojure.java.io :as io]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.deps.alpha.util.maven :as mvn]
@@ -39,9 +38,7 @@
   ([data] (write-deps-file data "deps.edn"))
   ([data f]
    (with-open [w (io/writer f)]
-     (binding [*out* w
-               *print-dup* true]
-       (pprint/pprint data)))))
+     (u/prn-edn data w))))
 
 (defn find-pantheon-deps [deps]
   (->> deps
