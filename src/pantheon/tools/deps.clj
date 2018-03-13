@@ -102,7 +102,10 @@
          {:aliases
           {:deps
            {:extra-deps {(symbol repo) dep}
-            :main-opts  ["-m" "pantheon.tools.deps"]}}}))))
+            :main-opts  ["-m" "pantheon.tools.deps"]}
+           :test
+           {:extra-deps {(symbol repo) dep}
+            :main-opts  ["-m" "pantheon.tools.test"]}}}))))
 
 (defn find-culprits []
   (->> (read-deps-file)
