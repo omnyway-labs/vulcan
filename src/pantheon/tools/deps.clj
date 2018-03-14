@@ -134,7 +134,7 @@
      :orig  orig}))
 
 (defn pull
-  "Pulls given projects. Does not update deps.edn
+  "Pulls given libs. Does not update deps.edn
   (pull)
      pulls all pantheon deps as defined in deps.edn
   (pull {org.clojure/clojure {:mvn/version \"1.9.0\"}})
@@ -152,9 +152,9 @@
    (when (map? deps)
      (->> (:repos (read-deps))
           (up/pull deps))))
-  ([project version]
+  ([lib version]
    (let [{:keys [repos deps]} (read-deps)
-         name  (symbol (str "omnypay/" (name project)))
+         name  (symbol (str "omnypay/" (name lib)))
          dep   (get deps name)]
      (if (= :latest version)
        (up/pull-latest {name dep} repos)
