@@ -8,6 +8,7 @@
    [pantheon.tools.util :as u]
    [pantheon.tools.commands :refer [defcommand] :as c]
    [pantheon.tools.deps.upgrade :as up]
+   [pantheon.tools.deps.classpath :as cp]
    [pantheon.tools.deps.link :as link]
    [pantheon.tools.deps.culprit :as culprit]
    [pantheon.tools.deps.pack :as pack])
@@ -159,10 +160,10 @@
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
 
-(defn load [resolved-deps]
+(defn make-classpath [resolved-deps]
   (->> (read-deps)
        :paths
-       (up/load resolved-deps)))
+       (cp/make-all-classpath resolved-deps)))
 
 (defcommand
   ^{:alias "flatten"
