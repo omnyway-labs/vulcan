@@ -15,7 +15,7 @@
   (condp = (find-procurer dep)
     :jar (:paths dep)
     :git (->> resource-paths
-              (map #(format "%s/%s" (:deps/root dep) %)))))
+              (map #(format "%s/%s/" (:deps/root dep) %)))))
 
 (defn make-all-classpath
   "Takes a list of resolved deps and paths

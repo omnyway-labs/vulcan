@@ -161,16 +161,17 @@
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
 
-(defn import!
-  "Import specified libs into current project and Repl"
-  [& args]
-  (let [x (apply pull args)]
-    (load/load-deps! x)))
-
 (defn make-classpath [resolved-deps]
   (->> (read-deps)
        :paths
        (cp/make-all-classpath resolved-deps)))
+
+(defn import!
+  "Import specified libs into current project and Repl"
+  [& args]
+  (-> (apply pull args)
+      (make-classpath)
+      (load/load-paths!)))
 
 (defcommand
   ^{:alias "flatten"
