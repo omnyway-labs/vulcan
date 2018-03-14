@@ -1,5 +1,5 @@
 (ns pantheon.tools.deps.upgrade
-  (:refer-clojure :exclude [flatten resolve])
+  (:refer-clojure :exclude [flatten resolve load])
   (:require
    [clojure.string :as str]
    [clojure.tools.deps.alpha :as deps]
@@ -119,11 +119,14 @@
   (->> (upgrade-to-latest selected-deps)
        (diff-dep selected-deps)))
 
+(defn load [resolved-deps paths]
+  (-> (deps/make-classpath resolved-deps paths nil)
+      (str/split #":")))
+
 (defn pull [deps repos]
-  (deps/resolve-deps
-   {:deps      deps
-    :mvn/repos  repos} nil)
-  :ok)
+  (-> (deps/resolve-deps
+       {:deps      deps
+        :mvn/repos  repos} nil)))
 
 (defn pull-all [repos deps selected-deps]
   (as-> selected-deps d

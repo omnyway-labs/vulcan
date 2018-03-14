@@ -124,15 +124,16 @@
         (pack/copy-deps))))
 
 (defn read-deps []
-  (let [{:keys [deps]
+  (let [{:keys [deps paths]
          :as   orig} (read-deps-file)
         repos      (build-repos (:mvn/repos orig))]
     {:deps  deps
+     :paths (distinct (conj paths "src"))
      :repos repos
      :orig  orig}))
 
 (defn pull
-  "Pulls given projects.
+  "Pulls given projects. Does not update deps.edn
   (pull)
      pulls all pantheon deps as defined in deps.edn
   (pull {org.clojure/clojure {:mvn/version \"1.9.0\"}})
@@ -149,7 +150,7 @@
   ([deps]
    (when (map? deps)
      (->> (:repos (read-deps))
-          (up/resolve-deps deps))))
+          (up/pull deps))))
   ([project version]
    (let [{:keys [repos deps]} (read-deps)
          name  (symbol (str "omnypay/" (name project)))
@@ -157,6 +158,11 @@
      (if (= :latest version)
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
+
+(defn load [resolved-deps]
+  (->> (read-deps)
+       :paths
+       (up/load resolved-deps)))
 
 (defcommand
   ^{:alias "flatten"
