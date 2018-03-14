@@ -165,6 +165,16 @@
        :paths
        (cp/make-all-classpath resolved-deps)))
 
+(defn current-classpath []
+  (cp/current-classpath))
+
+(defn import!
+  "Import specified libs into current project and Repl"
+  [& args]
+  (-> (apply pull args)
+      (make-classpath)
+      (cp/add-all!)))
+
 (defcommand
   ^{:alias "flatten"
     :doc   "Flatten out all dependencies recursively"}
