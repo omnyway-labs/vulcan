@@ -11,8 +11,7 @@
    [pantheon.tools.deps.classpath :as cp]
    [pantheon.tools.deps.link :as link]
    [pantheon.tools.deps.culprit :as culprit]
-   [pantheon.tools.deps.pack :as pack]
-   [pantheon.tools.deps.load :as load])
+   [pantheon.tools.deps.pack :as pack])
   (:import
    [java.io PushbackReader]))
 
@@ -167,14 +166,14 @@
        (cp/make-all-classpath resolved-deps)))
 
 (defn current-classpath []
-  (load/current-classpath))
+  (cp/current-classpath))
 
 (defn import!
   "Import specified libs into current project and Repl"
   [& args]
   (-> (apply pull args)
       (make-classpath)
-      (load/load-paths!)))
+      (cp/add-all!)))
 
 (defcommand
   ^{:alias "flatten"
