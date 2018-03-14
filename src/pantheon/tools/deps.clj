@@ -11,7 +11,8 @@
    [pantheon.tools.deps.classpath :as cp]
    [pantheon.tools.deps.link :as link]
    [pantheon.tools.deps.culprit :as culprit]
-   [pantheon.tools.deps.pack :as pack])
+   [pantheon.tools.deps.pack :as pack]
+   [pantheon.tools.deps.load :as load])
   (:import
    [java.io PushbackReader]))
 
@@ -159,6 +160,12 @@
      (if (= :latest version)
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
+
+(defn import!
+  "Import specified libs into current project and Repl"
+  [& args]
+  (let [x (apply pull args)]
+    (load/load-deps! x)))
 
 (defn make-classpath [resolved-deps]
   (->> (read-deps)
