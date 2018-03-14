@@ -166,6 +166,9 @@
        :paths
        (cp/make-all-classpath resolved-deps)))
 
+(defn current-classpath []
+  (load/current-classpath))
+
 (defn import!
   "Import specified libs into current project and Repl"
   [& args]
