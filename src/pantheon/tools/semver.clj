@@ -72,7 +72,7 @@
     :doc "Generate the next semantic version tag"}
   next-tag-command [{:keys [options]}]
   (let [{:keys [directory]} options]
-    (prn (next-semver-tag directory))))
+    (println (next-semver-tag directory))))
 
 (defn -main [& args]
   (c/process args))
