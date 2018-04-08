@@ -15,8 +15,11 @@
 ;; proper exit codes
 ;; follows pantheon test conventions
 
-(defn fail? [{:keys [fail error]}]
-  (or (pos? fail) (pos? error)))
+(defn fail? [{:keys [test fail error]}]
+  (or (nil? test)
+      (zero? test)
+      (pos? fail)
+      (pos? error)))
 
 (defn ns-filter [{:keys [namespace]}]
   (if namespace
