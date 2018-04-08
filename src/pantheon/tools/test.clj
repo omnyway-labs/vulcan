@@ -90,6 +90,9 @@
       (if (fail? result)
         (System/exit 1)
         (System/exit 0)))
+    (catch Exception e
+      (println e)
+      (System/exit 1))
     (finally
       (shutdown-agents))))
 
