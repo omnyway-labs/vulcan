@@ -82,8 +82,87 @@
 (defn find-aot-jars [deps]
   (->> (deps/resolve-deps
         {:deps  deps
-         :mvn/repos  mvn/standard-repos} nil)
-       (map (fn [dep]
-              (when (jar? dep)
-                (:paths dep))))
+         :mvn/repos mvn/standard-repos} nil)
+       (filter jar?)
+       (map :paths)
        (offending-jars)))
+
+;; Find overlapping namespaces
+
+(def loaded-paths #"^(/src/|/test/)")
+
+(def clj-extensions #".*\.(clj|cljc|cljs)$")
+
+(defn is-omnyway-dep? [[dep-name _]]
+  (= "omnypay" (namespace dep-name)))
+
+(defn is-clojure-file? [file]
+  (and (.isFile file)
+       (re-find clj-extensions (.getName file))))
+
+(defn truncate-root [root file]
+  (str/replace-first (.getCanonicalPath file) root ""))
+
+(defn is-in-loaded-paths? [path]
+  "Relies on convention currently since we'd have to parse deps files to see
+  what other paths would be, currently looks for src and test"
+  (re-find loaded-paths path))
+
+
+(defn relative-path->ns
+  [path]
+  (-> path
+      (str/replace-first loaded-paths "")
+      (str/replace #"\.(clj|cljs|cljc)$" "")
+      (str/replace #"/" ".")
+      (str/replace #"_" "-")
+      symbol))
+
+(defn dep->nses [dep-root]
+  (->> dep-root
+       clojure.java.io/file
+       file-seq
+       (filter is-clojure-file?)
+       (map (partial truncate-root dep-root))
+       (filter is-in-loaded-paths?)
+       (map relative-path->ns)))
+
+(defn add-current-project [deps-namespaces]
+  (let [cwd (.getCanonicalPath (clojure.java.io/file "."))
+        loaded-path-files (concat (file-seq (clojure.java.io/file "./src"))
+                                  (file-seq (clojure.java.io/file "./test")))]
+    (assoc deps-namespaces 'current-working-directory
+           (->> loaded-path-files
+                (filter is-clojure-file?)
+                (map (partial truncate-root cwd))
+                (map relative-path->ns)))))
+
+(defn track-ns-occurrences [deps-with-nses]
+  (reduce (fn [seen [dep nses]]
+            (reduce (fn [seen ns]
+                      (update seen ns (fnil conj []) dep))
+                    seen
+                    nses))
+          {}
+          deps-with-nses))
+
+(defn duplicate-ns? [[_ deps]]
+  (> (count deps) 1))
+
+(defn report-duplicates [duplicate-nses]
+  (doseq [[ns deps] duplicate-nses]
+    (println "\tThe following projects duplicate the namespace " ns ":")
+    (println "\t" deps)))
+
+(defn find-overlapping-namespaces [deps]
+  (let [deps-namespaces (add-current-project
+                         (into {}
+                               (->> (deps/resolve-deps {:deps deps
+                                                        :mvn/repos mvn/standard-repos} nil)
+                                    (filter is-omnyway-dep?)
+                                    (map (fn [[dep-name dep-val]]
+                                           [dep-name (:deps/root dep-val)]))
+                                    (map (fn [[dep-name dep-root]]
+                                           [dep-name (dep->nses dep-root)])))))
+        duplicate-nses (filter duplicate-ns? (track-ns-occurrences deps-namespaces))]
+    (report-duplicates duplicate-nses)))
