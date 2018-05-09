@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.set :as set]
+   [clojure.tools.deps.alpha.util.maven :as mvn]
    [clojure.tools.deps.alpha :as deps])
   (:import
    [java.util.jar JarFile]
@@ -12,11 +13,12 @@
 (defn jar-files
   "Given the path to a .jar file on disk, return a seq of files contained in the zip"
   [path]
-  (->> path
-      (JarFile.)
-      (.entries)
-      (enumeration-seq)
-      (map str)))
+  (when path
+    (->> path
+       (JarFile.)
+       (.entries)
+       (enumeration-seq)
+       (map str))))
 
 (defn jar-file? [path]
   (and (-> path io/file .exists)
@@ -79,7 +81,8 @@
 
 (defn find-aot-jars [deps]
   (->> (deps/resolve-deps
-        {:deps  deps} nil)
+        {:deps  deps
+         :mvn/repos  mvn/standard-repos} nil)
        (map (fn [dep]
               (when (jar? dep)
                 (:paths dep))))
