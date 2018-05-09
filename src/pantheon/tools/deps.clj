@@ -109,9 +109,10 @@
             :main-opts  ["-m" "pantheon.tools.test"]}}}))))
 
 (defn find-culprits []
-  (->> (read-deps-file)
-       :deps
-       (culprit/find-aot-jars)))
+  (let [deps (:deps (read-deps-file))]
+    (doto deps
+      (culprit/find-aot-jars)
+      (culprit/find-overlapping-namespaces))))
 
 (defn do-make-classpath []
   (-> (read-deps-file)

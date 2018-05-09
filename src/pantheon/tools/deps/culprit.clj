@@ -81,9 +81,74 @@
 
 (defn find-aot-jars [deps]
   (->> (deps/resolve-deps
-        {:deps  deps
-         :mvn/repos  mvn/standard-repos} nil)
-       (map (fn [dep]
-              (when (jar? dep)
-                (:paths dep))))
+        {:deps  deps} nil)
+       (filter jar?)
+       (map :paths)
        (offending-jars)))
+
+;; Find overlapping namespaces
+
+(def loaded-paths #"^(/src/|/test/)")
+
+(def clj-extensions #".*\.(clj|cljc|cljs)$")
+
+(defn spy [x]
+  (println x) x)
+
+(defn is-omnyway-dep? [[dep-name _]]
+  (= "omnypay" (namespace dep-name)))
+
+(defn is-clojure-file? [file]
+  (and (.isFile file)
+       (re-find clj-extensions (.getName file))))
+
+(defn truncate-root [root file]
+  (str/replace-first (.getAbsolutePath file) root ""))
+
+(defn is-in-loaded-paths? [path]
+  "Relies on convention currently since we'd have to parse deps files to see
+  what other paths would be, currently looks for src and test"
+  (re-find loaded-paths path))
+
+(defn relative-path->ns
+  [path]
+  (-> path
+      (str/replace-first loaded-paths "")
+      (str/replace #"\.(clj|cljs|cljc)$" "")
+      (str/replace #"/" ".")
+      (str/replace #"_" "-")
+      symbol))
+
+(defn dep->nses [dep-root]
+  (->> dep-root
+       clojure.java.io/file
+       file-seq
+       (filter is-clojure-file?)
+       (map (partial truncate-root dep-root))
+       (filter is-in-loaded-paths?)
+       (map relative-path->ns)))
+
+(defn find-overlapping-nses [deps-with-nses]
+  (reduce (fn [seen [dep nses]]
+            (reduce (fn [seen ns]
+                      (update seen ns (fnil conj []) dep))
+                    {} nses)) deps-with-nses))
+
+(defn duplicate-ns? [[_ deps]]
+  (> (count deps) 1))
+
+(defn report-duplicates [duplicate-nses]
+  (doseq [[ns deps] duplicate-nses]
+    (println "The following namespaces duplicate the namespace " ns ":")
+    (println deps)))
+
+(defn find-overlapping-namespaces [deps]
+  (let [deps->nses (into {}
+                         (->> (deps/resolve-deps {:deps deps} nil)
+                              (filter is-omnyway-dep?)
+                              (map (fn [[dep-name dep-val]]
+                                     [dep-name (:deps/root dep-val)]))
+                              (map (fn [[dep-name dep-root]]
+                                     [dep-name (dep->nses dep-root)]))))
+        duplicate-nses (filter duplicate-ns? (find-overlapping-nses deps->nses))]
+    (report-duplicates duplicate-nses)))
