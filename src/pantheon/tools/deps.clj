@@ -219,7 +219,7 @@
   ^{:alias "culprit"
     :doc   "List dependencies which are aot'd or have duplicate namespaces"}
   culprit [opts]
-  (u/prn-edn (find-culprits)))
+  (find-culprits))
 
 (defcommand
   ^{:alias "self-update"
