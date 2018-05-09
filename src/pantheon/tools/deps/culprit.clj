@@ -151,8 +151,8 @@
 
 (defn report-duplicates [duplicate-nses]
   (doseq [[ns deps] duplicate-nses]
-    (println "The following projects duplicate the namespace " ns ":")
-    (println deps)))
+    (println "\tThe following projects duplicate the namespace " ns ":")
+    (println "\t" deps)))
 
 (defn find-overlapping-namespaces [deps]
   (let [deps-namespaces (add-current-project
