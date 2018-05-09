@@ -93,9 +93,6 @@
 
 (def clj-extensions #".*\.(clj|cljc|cljs)$")
 
-(defn spy [x]
-  (println x) x)
-
 (defn is-omnyway-dep? [[dep-name _]]
   (= "omnypay" (namespace dep-name)))
 
@@ -132,7 +129,6 @@
 (defn track-ns-occurrences [deps-with-nses]
   (reduce (fn [seen [dep nses]]
             (reduce (fn [seen ns]
-                      (println ns)
                       (update seen ns (fnil conj []) dep))
                     {}
                     nses))
