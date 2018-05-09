@@ -101,12 +101,13 @@
        (re-find clj-extensions (.getName file))))
 
 (defn truncate-root [root file]
-  (str/replace-first (.getAbsolutePath file) root ""))
+  (str/replace-first (.getCanonicalPath file) root ""))
 
 (defn is-in-loaded-paths? [path]
   "Relies on convention currently since we'd have to parse deps files to see
   what other paths would be, currently looks for src and test"
   (re-find loaded-paths path))
+
 
 (defn relative-path->ns
   [path]
@@ -126,11 +127,21 @@
        (filter is-in-loaded-paths?)
        (map relative-path->ns)))
 
+(defn add-current-project [deps-namespaces]
+  (let [cwd (.getCanonicalPath (clojure.java.io/file "."))
+        loaded-path-files (concat (file-seq (clojure.java.io/file "./src"))
+                                  (file-seq (clojure.java.io/file "./test")))]
+    (assoc deps-namespaces 'current-working-directory
+           (->> loaded-path-files
+                (filter is-clojure-file?)
+                (map (partial truncate-root cwd))
+                (map relative-path->ns)))))
+
 (defn track-ns-occurrences [deps-with-nses]
   (reduce (fn [seen [dep nses]]
             (reduce (fn [seen ns]
                       (update seen ns (fnil conj []) dep))
-                    {}
+                    seen
                     nses))
           {}
           deps-with-nses))
@@ -144,13 +155,14 @@
     (println deps)))
 
 (defn find-overlapping-namespaces [deps]
-  (let [deps-namespaces (into {}
-                              (->> (deps/resolve-deps {:deps deps
-                                                       :mvn/repos mvn/standard-repos} nil)
-                                   (filter is-omnyway-dep?)
-                                   (map (fn [[dep-name dep-val]]
-                                          [dep-name (:deps/root dep-val)]))
-                                   (map (fn [[dep-name dep-root]]
-                                          [dep-name (dep->nses dep-root)]))))
+  (let [deps-namespaces (add-current-project
+                         (into {}
+                               (->> (deps/resolve-deps {:deps deps
+                                                        :mvn/repos mvn/standard-repos} nil)
+                                    (filter is-omnyway-dep?)
+                                    (map (fn [[dep-name dep-val]]
+                                           [dep-name (:deps/root dep-val)]))
+                                    (map (fn [[dep-name dep-root]]
+                                           [dep-name (dep->nses dep-root)])))))
         duplicate-nses (filter duplicate-ns? (track-ns-occurrences deps-namespaces))]
     (report-duplicates duplicate-nses)))
