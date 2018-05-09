@@ -111,7 +111,7 @@
 (defn find-culprits []
   (let [deps (:deps (read-deps-file))]
     (culprit/find-aot-jars deps)
-    (culprit/find-overlapping-namespaces)))
+    (culprit/find-overlapping-namespaces deps)))
 
 (defn do-make-classpath []
   (-> (read-deps-file)
