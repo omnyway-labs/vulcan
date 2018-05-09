@@ -81,7 +81,8 @@
 
 (defn find-aot-jars [deps]
   (->> (deps/resolve-deps
-        {:deps  deps} nil)
+        {:deps  deps
+         :mvn/repos mvn/standard-repos} nil)
        (filter jar?)
        (map :paths)
        (offending-jars)))
@@ -128,11 +129,15 @@
        (filter is-in-loaded-paths?)
        (map relative-path->ns)))
 
-(defn find-overlapping-nses [deps-with-nses]
+(defn track-ns-occurrences [deps-with-nses]
   (reduce (fn [seen [dep nses]]
             (reduce (fn [seen ns]
+                      (println ns)
                       (update seen ns (fnil conj []) dep))
-                    {} nses)) deps-with-nses))
+                    {}
+                    nses))
+          {}
+          deps-with-nses))
 
 (defn duplicate-ns? [[_ deps]]
   (> (count deps) 1))
@@ -143,12 +148,13 @@
     (println deps)))
 
 (defn find-overlapping-namespaces [deps]
-  (let [deps->nses (into {}
-                         (->> (deps/resolve-deps {:deps deps} nil)
-                              (filter is-omnyway-dep?)
-                              (map (fn [[dep-name dep-val]]
-                                     [dep-name (:deps/root dep-val)]))
-                              (map (fn [[dep-name dep-root]]
-                                     [dep-name (dep->nses dep-root)]))))
-        duplicate-nses (filter duplicate-ns? (find-overlapping-nses deps->nses))]
+  (let [deps-namespaces (into {}
+                              (->> (deps/resolve-deps {:deps deps
+                                                       :mvn/repos mvn/standard-repos} nil)
+                                   (filter is-omnyway-dep?)
+                                   (map (fn [[dep-name dep-val]]
+                                          [dep-name (:deps/root dep-val)]))
+                                   (map (fn [[dep-name dep-root]]
+                                          [dep-name (dep->nses dep-root)]))))
+        duplicate-nses (filter duplicate-ns? (track-ns-occurrences deps-namespaces))]
     (report-duplicates duplicate-nses)))
