@@ -53,7 +53,7 @@
   ([path earlier]
    (distance path earlier "HEAD"))
   ([path earlier later]
-   (max 0 (dec (count (revlist path earlier later))))))
+   (count (revlist path earlier later))))
 
 (defn tags [path & [raw?]]
   (let [repo (as-repo path)]
