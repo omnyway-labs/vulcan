@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps.culprit
+(ns vulcan.deps.culprit
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]

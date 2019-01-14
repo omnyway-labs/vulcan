@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps.upgrade
+(ns vulcan.deps.upgrade
   (:refer-clojure :exclude [flatten resolve])
   (:require
    [clojure.string :as str]
@@ -6,7 +6,7 @@
    [clojure.tools.deps.alpha.util.maven :as mvn]
    [clojure.tools.gitlibs :as gl]
    [clojure.tools.gitlibs.impl :as impl]
-   [pantheon.tools.util :as u])
+   [vulcan.util :as u])
   (:import
    [org.eclipse.jgit.util RefMap]
    [org.eclipse.jgit.revwalk RevWalk]))

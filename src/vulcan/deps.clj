@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps
+(ns vulcan.deps
   (:refer-clojure :exclude [flatten resolve])
   (:require
    [clojure.string :as str]
@@ -11,7 +11,8 @@
    [pantheon.tools.deps.classpath :as cp]
    [pantheon.tools.deps.link :as link]
    [pantheon.tools.deps.culprit :as culprit]
-   [pantheon.tools.deps.pack :as pack])
+   [pantheon.tools.deps.pack :as pack]
+   [pantheon.tools.deps.uberjar :as uberjar])
   (:import
    [java.io PushbackReader]))
 
@@ -124,6 +125,12 @@
     (-> (up/resolve-deps deps repos)
         (pack/copy-deps))))
 
+(defn do-uberjar []
+  (let [{:keys [deps] :as orig} (read-deps-file)
+        repos (build-repos (:mvn/repos orig))]
+    (-> (up/resolve-deps deps repos)
+        (uberjar/create))))
+
 (defn read-deps []
   (let [{:keys [deps paths]
          :as   orig} (read-deps-file)
@@ -208,6 +215,13 @@
   (do-pack)
   (spit ".classpath" (do-make-classpath))
   (println "Copied deps to lib and wrote .classpath"))
+
+(defcommand
+  ^{:alias "uberjar"
+    :doc   "Pack deps into a lambda zip"}
+  uberjar [opts]
+  (do-uberjar)
+  (println "created test.uberjar"))
 
 (defcommand
   ^{:alias "classpath"

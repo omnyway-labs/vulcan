@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps.classpath
+(ns vulcan.deps.classpath
   (:require
    [clojure.string :as str]
    [clojure.pprint :as pprint]

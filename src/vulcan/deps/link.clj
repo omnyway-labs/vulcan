@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps.link)
+(ns vulcan.deps.link)
 
 (defn resolve-local [dep-name dep]
   (merge {:local/root (str "../" (name dep-name))}

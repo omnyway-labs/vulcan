@@ -1,4 +1,4 @@
-(ns pantheon.tools.commands
+(ns vulcan.commands
   (:require
    [clojure.tools.cli :as cli])
   (:import

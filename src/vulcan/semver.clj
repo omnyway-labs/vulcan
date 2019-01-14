@@ -1,4 +1,4 @@
-(ns pantheon.tools.semver
+(ns vulcan.semver
   (:require
    [clojure.string :as str]
    [pantheon.tools.util :as u]

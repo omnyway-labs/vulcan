@@ -1,4 +1,4 @@
-(ns pantheon.tools.deps.pack
+(ns vulcan.deps.pack
   (:require
    [clojure.string :as str]
    [clojure.pprint :as pprint]

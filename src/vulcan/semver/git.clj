@@ -1,4 +1,4 @@
-(ns pantheon.tools.semver.git
+(ns vulcan.semver.git
   (:require
    [clojure.java.io :as io])
   (:import
@@ -47,7 +47,7 @@
           (.log)
           (.addRange ref master)
           (.call)
-          seq))))  
+          seq))))
 
 (defn distance
   ([path earlier]

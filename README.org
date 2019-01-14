@@ -1,0 +1,142 @@
+* Vulcan
+
+Tool to simplify workflow with Git-based Clojure Library dependencies
+
+- upgrade Git deps based on organization or prefix
+- upgrade to latest SHA corresponding to release tags
+- flatten dependencies
+- diff upstream versions of Git deps
+- link to local projects
+- Generate SEMVER tags based on git distance
+- Pack dependencies to run without uberjar
+- find dependencies that have conflicting namespaces or have AOT
+
+* Install
+
+Add below alias to ~/.clojure/deps.edn
+
+#+BEGIN_SRC clojure
+{:aliases
+ {:deps
+  {:extra-deps
+   {omnyway-labs/vulcan
+    {:git/url "git@github.com:omnyway-labs/vulcan.git",
+     :sha "5d2c3c0cadfaffef02f69e4117d14a2fe817495c",
+     :tag "master"}},
+   :main-opts ["-m" "vulcan.deps"],
+   :jvm-opts
+   ["-client"
+    "-XX:+UseSerialGC"
+    "-XX:CICompilerCount=1"
+    "-XX:+TieredCompilation"
+    "-Xshare:off"
+    "-Xverify:none"
+    "-XX:TieredStopAtLevel=1"]}}}
+#+END_SRC
+
+* Usage
+
+#+begin_src sh
+clj -Adeps command args
+Available commands:
+  classpath  Print the Pack classpath
+  culprit    List dependencies which are aotd or have duplicate namespaces
+  diff       Show diff of current and upstream tags for repos with given prefix
+  flatten    Flatten out all dependencies recursively
+  link       link local git repos
+  pack       Packs Git and Jar dependencies
+  self-update Update vulcan-tools to latest master SHA
+  unlink     unlink local git repos
+  upgrade    Upgrade Pantheon deps to latest tags
+#+end_src
+
+** Upgrading Dependencies
+
+To upgrade git dependencies to their latest tags, do
+#+begin_src sh
+clj -Adeps upgrade -p <prefix>
+
+# where prefix is the Organization prefix
+
+# for a dry run
+clj -Adeps upgrade --dry-run
+#+end_src
+
+** Flattening dependencies
+
+To upgrade git dependencies to their latest tags and flatten
+out their dependencies, do
+#+begin_src sh
+clj -Adeps upgrade --flatten
+# or short form
+clj -Adeps upgrade -f
+#+end_src
+
+** Diffing upstream versions
+
+To find the latest and current versions of Pantheon projects
+#+begin_src sh
+clj -Adeps diff
+# output should be something like this
+{foo/bar
+ {"0.1.6" "2018-03-05T03:46:54.000+0000",
+  "0.1.7" "2018-03-07T01:50:08.000+0000"},
+#+end_src
+
+To find latest maven releases
+#+begin_src sh
+clj -Adeps diff --maven
+# output should be something like this
+{org.clojure/clojure {:current "1.9.0", :latest "1.10.0-alpha4"}}
+#+end_src
+
+** Linking to local projects
+
+Sometimes, it is useful to "link" local projects that have local
+changes - similar to *lein checkout*. To get the similar behavior do
+
+#+begin_src sh
+clj -Adeps link --project <project>
+# or
+clj -Adeps link -p <project>
+
+# to link all pantheon projects, just do
+clj -Adeps link
+#+end_src
+
+Unlinking is easier too. Make sure you unlink before comitting
+deps.edn to git
+
+#+begin_src sh
+clj -Adeps unlink -p <project>
+
+# to unlink all pantheon projects, just do
+clj -Adeps unlink
+#+end_src
+
+** Packing Dependencies
+
+To pack all maven and git dependencies into a single directory, do
+#+begin_src  sh
+clj -Adeps pack
+#+end_src
+This packs all deps to ./lib/{git,jar}. We could tar, containerize and deploy it.
+That is what CI does. Also *pack* generates a .classpath file that
+contains the resolved classpath string that can be used when invoking
+the service
+#+begin_src sh
+java -cp src:`cat .classpath` clojure.main -m my.main $@
+#+end_src
+
+** Finding Culprits
+
+Sometimes, it is helpful to identify dependencies that AOT or have
+conflicting namespaces.
+
+#+begin_src sh
+clj -Adeps culprit
+com.amazonaws/aws-java-sdk-kms
+ {:mvn/version "1.11.221",
+  :aot? true
+  :dependents [com.amazonaws/aws-java-sdk-s3]}
+#+end_src

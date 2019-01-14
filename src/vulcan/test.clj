@@ -1,4 +1,4 @@
-(ns pantheon.tools.test
+(ns vulcan.test
   (:refer-clojure :exclude [ns])
   (:require
    [clojure.string :as str]
