@@ -10,6 +10,7 @@ Tool to simplify workflow with Git-based Clojure Library dependencies
 - Generate SEMVER tags based on git distance
 - Pack dependencies to run without uberjar
 - find dependencies that have conflicting namespaces or have AOT
+- test-runner wrapper with fixed selectors and exit codes
 
 * Install
 
