@@ -8,7 +8,8 @@
    [vulcan.util :as u]
    [vulcan.commands :refer [defcommand] :as c]))
 
-;; from test-runner
+;; from cognitect's test-runner
+;; vulvan.test simplifies the filters and proper exit code for use outside of the REPL
 
 (defn fail? [{:keys [test fail error]}]
   (or (nil? test)
