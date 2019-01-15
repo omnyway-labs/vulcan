@@ -11,6 +11,7 @@ Tool to simplify workflow with Git-based Clojure Library dependencies
 - pack dependencies to run without uberjar
 - find dependencies that have conflicting namespaces or have AOT
 - run test selectors with proper exit code
+- test
 
 * Install
 
@@ -145,11 +146,25 @@ clj -Avulcan  next-tag
 0.1.0
 #+END_SRC
 For this to work, need to create a RELEASE-0.1.0 tag initially
-** Test Selector
+** Test selectors
+
 #+BEGIN_SRC sh
-clj -Avulcan test
+clj -Avulcan test -s unit
+clj -Avulcan test -s integration
 #+END_SRC
 This is useful to run tests with proper exit codes
+** Importing libraries in the REPL
+#+BEGIN_SRC clojure
+(require '[vulcan.deps :as deps])
+;; to import known libs in current deps.edn
+(deps/import! :my-git-lib :latest)
+(deps/import! :my-git-lib "0.1.40")
+;; to try a new library not in deps.edn
+(deps/import! '(hiccup {:mvn/version "0.1.0"})
+(deps/import! '{org/project
+                 {:git/url "git@github.com:org/project.git",
+                  :tag "0.1.98"}})
+#+END_SRC
 
 * License - Apache 2.0
 
