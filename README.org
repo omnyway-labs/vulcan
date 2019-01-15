@@ -7,10 +7,10 @@ Tool to simplify workflow with Git-based Clojure Library dependencies
 - flatten dependencies
 - diff upstream versions of Git deps
 - link to local projects
-- Generate the next semantic version tag
-- Pack dependencies to run without uberjar
+- generate the next semantic version tag
+- pack dependencies to run without uberjar
 - find dependencies that have conflicting namespaces or have AOT
-- test-runner wrapper with fixed selectors and exit codes
+- run test selectors with proper exit code
 
 * Install
 
