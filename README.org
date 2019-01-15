@@ -1,6 +1,6 @@
 * Vulcan
 
-Tool to simplify workflow with Git-based Clojure Library dependencies
+Tool to simplify workflow with Git-based Clojure dependencies using clojure.tools.deps
 
 - upgrade Git deps based on organization or prefix
 - upgrade to latest SHA corresponding to release tags
@@ -64,7 +64,7 @@ e.g clj -Avulcan upgrade -p omnyway-labs
 # where prefix is the Organization prefix
 
 # for a dry run
-clj -Avulcan upgrade --dry-run
+clj -Avulcan upgrade -p <github-org> --dry-run
 #+end_src
 
 ** Flattening dependencies
@@ -72,9 +72,9 @@ clj -Avulcan upgrade --dry-run
 To upgrade git dependencies to their latest tags and flatten
 out their dependencies, do
 #+begin_src sh
-clj -Avulcan upgrade --flatten
+clj -Avulcan upgrade -p <github-org> --flatten
 # or short form
-clj -Avulcan upgrade -f
+clj -Avulcan upgrade -p <github-org> -f
 #+end_src
 
 ** Diffing upstream versions
