@@ -79,7 +79,7 @@ clj -Avulcan upgrade -f
 
 ** Diffing upstream versions
 
-To find the latest and current versions of Pantheon projects
+To find the latest and current versions (tags) for given org
 #+begin_src sh
 clj -Avulcan diff -p <github-org>
 # output should be something like this
