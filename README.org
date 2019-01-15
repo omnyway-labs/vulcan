@@ -11,7 +11,7 @@ Tool to simplify workflow with Git-based Clojure Library dependencies
 - pack dependencies to run without uberjar
 - find dependencies that have conflicting namespaces or have AOT
 - run test selectors with proper exit code
-- test
+- import new deps in the REPL
 
 * Install
 
