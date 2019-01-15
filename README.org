@@ -58,7 +58,8 @@ Available commands:
 
 To upgrade git dependencies to their latest tags, do
 #+begin_src sh
-clj -Avulcan upgrade -p <prefix>
+clj -Avulcan upgrade -p <github-org>
+e.g clj -Avulcan upgrade -p omnyway-labs
 
 # where prefix is the Organization prefix
 
@@ -80,20 +81,12 @@ clj -Avulcan upgrade -f
 
 To find the latest and current versions of Pantheon projects
 #+begin_src sh
-clj -Avulcan diff
+clj -Avulcan diff -p <github-org>
 # output should be something like this
 {foo/bar
  {"0.1.6" "2018-03-05T03:46:54.000+0000",
   "0.1.7" "2018-03-07T01:50:08.000+0000"},
 #+end_src
-
-To find latest maven releases
-#+begin_src sh
-clj -Avulcan diff --maven
-# output should be something like this
-{org.clojure/clojure {:current "1.9.0", :latest "1.10.0-alpha4"}}
-#+end_src
-
 ** Linking to local projects
 
 Sometimes, it is useful to "link" local projects that have local
