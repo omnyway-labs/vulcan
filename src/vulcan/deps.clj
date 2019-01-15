@@ -190,13 +190,15 @@
             ["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
     :doc   "Upgrade deps to latest tags for given prefix"}
   upgrade [{:keys [options]}]
-  (let [{:keys [flatten dry-run]} options]
-    (let [deps (do-upgrade flatten)]
-      (if dry-run
-        (u/prn-edn deps)
-        (do
-          (write-deps-file deps)
-          (println "Wrote deps.edn"))))))
+  (let [{:keys [prefix flatten dry-run]} options]
+    (if prefix
+      (let [deps (do-upgrade prefix flatten)]
+        (if dry-run
+          (u/prn-edn deps)
+          (do
+            (write-deps-file deps)
+            (println "Wrote deps.edn"))))
+      (println "No Prefix provided"))))
 
 (defcommand
   ^{:alias "diff"

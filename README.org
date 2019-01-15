@@ -100,9 +100,6 @@ changes - similar to *lein checkout*. To get the similar behavior do
 clj -Avulcan link --project <project>
 # or
 clj -Avulcan link -p <project>
-
-# to link all local projects, just do
-clj -Avulcan link
 #+end_src
 
 Unlinking is easier too. Make sure you unlink before comitting
@@ -110,9 +107,6 @@ deps.edn to git
 
 #+begin_src sh
 clj -Avulcan unlink -p <project>
-
-# to unlink all projects, just do
-clj -Avulcan unlink
 #+end_src
 
 ** Packing Dependencies
