@@ -24,7 +24,7 @@ Add below alias to ~/.clojure/deps.edn
     {:git/url "git@github.com:omnyway-labs/vulcan.git",
      :sha "5d2c3c0cadfaffef02f69e4117d14a2fe817495c",
      :tag "master"}},
-   :main-opts ["-m" "vulcan.deps"],
+   :main-opts ["-m" "vulcan.main"],
    :jvm-opts
    ["-client"
     "-XX:+UseSerialGC"
@@ -40,15 +40,17 @@ Add below alias to ~/.clojure/deps.edn
 #+begin_src sh
 clj -Avulcan command args
 Available commands:
-  classpath  Print the Pack classpath
+  upgrade    Upgrade deps to latest tags for given org or prefix
   culprit    List dependencies which are aotd or have duplicate namespaces
   diff       Show diff of current and upstream tags for repos with given prefix
   flatten    Flatten out all dependencies recursively
   link       link local git repos
-  pack       Packs Git and Jar dependencies
-  self-update Update vulcan-tools to latest master SHA
   unlink     unlink local git repos
-  upgrade    Upgrade deps to latest tags for given org or prefix
+  pack       Packs Git and Jar dependencies
+  classpath  Print the Pack classpath
+  next-tag   Generate the next semantic version tag
+  self-update Update vulcan-tools to latest master SHA
+  test       Run test-runner with given selector
 #+end_src
 
 ** Upgrading Dependencies
@@ -135,6 +137,19 @@ com.amazonaws/aws-java-sdk-kms
   :aot? true
   :dependents [com.amazonaws/aws-java-sdk-s3]}
 #+end_src
+
+** Generate next-tag
+
+#+BEGIN_SRC sh
+clj -Avulcan  next-tag
+0.1.0
+#+END_SRC
+For this to work, need to create a RELEASE-0.1.0 tag initially
+** Test Selector
+#+BEGIN_SRC sh
+clj -Avulcan test
+#+END_SRC
+This is useful to run tests with proper exit codes
 
 * License - Apache 2.0
 

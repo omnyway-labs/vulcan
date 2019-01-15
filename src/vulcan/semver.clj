@@ -61,18 +61,7 @@
      (max rel-min min)
      (+ patch delta)]))
 
-(defn next-semver-tag [path]
+(defn next-tag [path]
   (let [repo (git/as-repo path)
         semver (next-semver-version repo)]
     (str/join "." semver)))
-
-(defcommand
-  ^{:alias "next-tag"
-    :opts [["-d" "--directory PROJECT-DIRECTORY" "Path to project directory"]]
-    :doc "Generate the next semantic version tag"}
-  next-tag-command [{:keys [options]}]
-  (let [{:keys [directory]} options]
-    (print (next-semver-tag (or (not-empty directory) ".")))))
-
-(defn -main [& args]
-  (c/process args))

@@ -8,6 +8,8 @@
    [vulcan.util :as u]
    [vulcan.commands :refer [defcommand] :as c]))
 
+;; from test-runner
+
 (defn fail? [{:keys [test fail error]}]
   (or (nil? test)
       (zero? test)
@@ -88,59 +90,3 @@
       (System/exit 1))
     (finally
       (shutdown-agents))))
-
-(defn do-run-ns [ns]
-  (try
-    (let [opts {:namespace ns}
-          result (do-test opts)]
-      (println result)
-      (if (fail? result)
-        (System/exit 1)
-        (System/exit 0)))
-    (finally
-      (shutdown-agents))))
-
-(defcommand
-  ^{:alias "integration"
-    :opts [["-d" "--dry-run"]]
-    :doc   "Run Integration tests"}
-  integration [{:keys [options]}]
-  (run-test :integration))
-
-(defcommand
-  ^{:alias "unit"
-    :opts [["-d" "--dry-run"]]
-    :doc   "Run unit tests"}
-  unit [{:keys [options]}]
-  (run-test nil))
-
-(defcommand
-  ^{:alias "api"
-    :opts [["-d" "--dry-run"]]
-    :doc   "Run API tests"}
-  api [{:keys [options]}]
-  (run-test :api))
-
-(defcommand
-  ^{:alias "scenario"
-    :opts [["-d" "--dry-run"]]
-    :doc   "Run Scenario tests"}
-  scenario [{:keys [options]}]
-  (run-test :scenario))
-
-(defcommand
-  ^{:alias "concurrent"
-    :opts [["-d" "--dry-run"]]
-    :doc   "Run Concurrent tests"}
-  concurrent [{:keys [options]}]
-  (run-test :concurrent))
-
-(defcommand
-  ^{:alias "run-ns"
-    :opts [["-n" "--namespace Namespace" "Namespace"]]
-    :doc   "Run tests in given namespace"}
-  run-ns [{:keys [options]}]
-  (do-run-ns (symbol (:namespace options))))
-
-(defn -main [& args]
-  (c/process args))

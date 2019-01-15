@@ -6,7 +6,6 @@
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.deps.alpha.util.maven :as mvn]
    [vulcan.util :as u]
-   [vulcan.commands :refer [defcommand] :as c]
    [vulcan.deps.upgrade :as up]
    [vulcan.deps.classpath :as cp]
    [vulcan.deps.link :as link]
@@ -55,25 +54,25 @@
        (assoc orig :deps)
        (into (sorted-map))))
 
-(defn do-flatten []
+(defn flatten []
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
     (-> (up/flatten deps repos)
         (into (sorted-map)))))
 
-(defn do-upgrade [prefix flatten?]
+(defn upgrade [prefix flatten?]
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
     (->> (find-org-deps prefix deps)
          (up/upgrade flatten? repos deps)
          (ensure-sorted orig))))
 
-(defn do-diff [prefix]
+(defn diff [prefix]
   (let [{:keys [deps] :as orig} (read-deps-file)]
     (->> (find-org-deps prefix deps)
          (up/diff deps))))
 
-(defn do-link [project]
+(defn link [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
     (->> (find-local-projects project deps)
          (link/link)
@@ -81,7 +80,7 @@
          (merge deps)
          (ensure-sorted orig))))
 
-(defn do-unlink [project]
+(defn unlink [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
     (->> (find-local-projects project deps)
          (link/unlink)
@@ -89,7 +88,7 @@
          (merge deps)
          (ensure-sorted orig))))
 
-(defn do-self-update []
+(defn self-update []
   (let [repo "omnyway-labs/vulcan"
         url  (format "git@github.com:%s.git" repo)
         dep  (up/resolve-master url)]
@@ -109,22 +108,16 @@
     (culprit/find-aot-jars deps)
     (culprit/find-overlapping-namespaces deps)))
 
-(defn do-make-classpath []
+(defn make-classpath []
   (-> (read-deps-file)
        :paths
        (pack/make-all-classpath)))
 
-(defn do-pack []
+(defn pack []
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
     (-> (up/resolve-deps deps repos)
         (pack/copy-deps))))
-
-(defn do-uberjar []
-  (let [{:keys [deps] :as orig} (read-deps-file)
-        repos (build-repos (:mvn/repos orig))]
-    (-> (up/resolve-deps deps repos)
-        (uberjar/create))))
 
 (defn read-deps []
   (let [{:keys [deps paths]
@@ -176,86 +169,3 @@
   (-> (apply pull args)
       (make-classpath)
       (cp/add-all!)))
-
-(defcommand
-  ^{:alias "flatten"
-    :doc   "Flatten out all dependencies recursively"}
-  flatten [opts]
-  (u/prn-edn (do-flatten)))
-
-(defcommand
-  ^{:alias "upgrade"
-    :opts  [["-f" "--flatten"]
-            ["-d" "--dry-run"]
-            ["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
-    :doc   "Upgrade deps to latest tags for given prefix"}
-  upgrade [{:keys [options]}]
-  (let [{:keys [prefix flatten dry-run]} options]
-    (if prefix
-      (let [deps (do-upgrade prefix flatten)]
-        (if dry-run
-          (u/prn-edn deps)
-          (do
-            (write-deps-file deps)
-            (println "Wrote deps.edn"))))
-      (println "No Prefix provided"))))
-
-(defcommand
-  ^{:alias "diff"
-    :opts [["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
-    :doc   "Show diff of current and upstream tags for repos in given org (prefix)"}
-  diff [{:keys [options]}]
-  (let [{:keys [prefix]} options]
-    (u/prn-edn (do-diff prefix))))
-
-(defcommand
-  ^{:alias "pack"
-    :doc   "Packs Git and Jar dependencies"}
-  pack [opts]
-  (do-pack)
-  (spit ".classpath" (do-make-classpath))
-  (println "Copied deps to lib and wrote .classpath"))
-
-(defcommand
-  ^{:alias "uberjar"
-    :doc   "Pack deps into a lambda zip"}
-  uberjar [opts]
-  (do-uberjar)
-  (println "created test.uberjar"))
-
-(defcommand
-  ^{:alias "classpath"
-    :doc   "Print the Pack classpath"}
-  classpath [opts]
-  (println (do-make-classpath)))
-
-(defcommand
-  ^{:alias "culprit"
-    :doc   "List dependencies which are aot'd or have duplicate namespaces"}
-  culprit [opts]
-  (find-culprits))
-
-(defcommand
-  ^{:alias "self-update"
-    :doc   "Update vulcan to latest master SHA"}
-  self-update [opts]
-  (write-deps-file (do-self-update) global-deps-file))
-
-(defcommand
-  ^{:alias "link"
-    :opts  [["-p" "--project PROEJCT" "Project name"]]
-    :doc   "link local git repos"}
-  link [{:keys [options]}]
-  (let [{:keys [project]} options]
-    (write-deps-file (do-link project))))
-
-(defcommand
-  ^{:alias "unlink"
-    :opts  [["-p" "--project PROEJCT" "Project name"]]
-    :doc   "unlink local git repos"}
-  unlink [{:keys [options]}]
-  (let [{:keys [project]} options]
-    (write-deps-file (do-unlink project))))
-
-(defn -main [& args]
-  (c/process args))
