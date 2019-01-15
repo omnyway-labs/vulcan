@@ -61,10 +61,13 @@
   (println (deps/make-classpath)))
 
 (defcommand
-  ^{:alias "culprit"
-    :doc   "List dependencies which are aot'd or have duplicate namespaces"}
-  culprit-command [opts]
-  (deps/find-culprits))
+  ^{:alias "conflicts"
+    :opts [["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
+    :doc   "Find overlapping or conflicting namespaces for given org"}
+  conflicts-command [{:keys [options]}]
+  (let [{:keys [prefix]} options]
+    (when prefix
+      (deps/find-culprits prefix))))
 
 (defcommand
   ^{:alias "self-update"

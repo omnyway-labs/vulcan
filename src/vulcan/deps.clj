@@ -103,10 +103,10 @@
            {:extra-deps {(symbol repo) dep}
             :main-opts  ["-m" "vulcan.test"]}}}))))
 
-(defn find-culprits []
-  (let [deps (:deps (read-deps-file))]
-    (culprit/find-aot-jars deps)
-    (culprit/find-overlapping-namespaces deps)))
+(defn find-culprits [prefix]
+  (->> (read-deps-file)
+       :deps
+       (culprit/find-overlapping-namespaces prefix)))
 
 (defn make-classpath []
   (-> (read-deps-file)

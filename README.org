@@ -42,13 +42,13 @@ Add below alias to ~/.clojure/deps.edn
 clj -Avulcan command args
 Available commands:
   upgrade    Upgrade deps to latest tags for given org or prefix
-  culprit    List dependencies which are aotd or have duplicate namespaces
   diff       Show diff of current and upstream tags for repos with given prefix
   flatten    Flatten out all dependencies recursively
   link       link local git repos
   unlink     unlink local git repos
   pack       Packs Git and Jar dependencies
   classpath  Print the Pack classpath
+  conflicts  Find overlapping or conflicting namespaces for given org or prefix
   next-tag   Generate the next semantic version tag
   self-update Update vulcan-tools to latest master SHA
   test       Run test-runner with given selector
@@ -126,17 +126,16 @@ the service
 java -cp src:`cat .classpath` clojure.main -m my.main $@
 #+end_src
 
-** Finding Culprits
+** Finding Conflict
 
-Sometimes, it is helpful to identify dependencies that AOT or have
-conflicting namespaces.
+To find overlapping or conflicting namespaces for given org (or prefix)
 
 #+begin_src sh
-clj -Avulcan culprit
-com.amazonaws/aws-java-sdk-kms
- {:mvn/version "1.11.221",
-  :aot? true
-  :dependents [com.amazonaws/aws-java-sdk-s3]}
+clj -Avulcan conflicts -p github-org
+
+The following projects duplicate the namespace foo.bar
+foo-dep foo.bar
+bar-dep foo.bar
 #+end_src
 
 ** Generate next-tag

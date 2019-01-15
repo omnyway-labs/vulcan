@@ -93,7 +93,7 @@
 
 (def clj-extensions #".*\.(clj|cljc|cljs)$")
 
-(defn is-omnyway-dep? [[dep-name _]]
+(defn is-org-dep? [[dep-name _]]
   (= "omnypay" (namespace dep-name)))
 
 (defn is-clojure-file? [file]
@@ -154,12 +154,12 @@
     (println "\tThe following projects duplicate the namespace " ns ":")
     (println "\t" deps)))
 
-(defn find-overlapping-namespaces [deps]
+(defn find-overlapping-namespaces [prefix deps]
   (let [deps-namespaces (add-current-project
                          (into {}
                                (->> (deps/resolve-deps {:deps deps
                                                         :mvn/repos mvn/standard-repos} nil)
-                                    (filter is-omnyway-dep?)
+                                    (filter #(is-org-dep? prefix %))
                                     (map (fn [[dep-name dep-val]]
                                            [dep-name (:deps/root dep-val)]))
                                     (map (fn [[dep-name dep-root]]
