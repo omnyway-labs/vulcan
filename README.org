@@ -48,7 +48,7 @@ Available commands:
   pack       Packs Git and Jar dependencies
   self-update Update vulcan-tools to latest master SHA
   unlink     unlink local git repos
-  upgrade    Upgrade Pantheon deps to latest tags
+  upgrade    Upgrade deps to latest tags for given org or prefix
 #+end_src
 
 ** Upgrading Dependencies
