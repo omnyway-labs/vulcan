@@ -5,15 +5,8 @@
    [clojure.tools.namespace.find :as find]
    [clojure.java.io :as io]
    [clojure.test :as test]
-   [pantheon.tools.util :as u]
-   [pantheon.tools.commands :refer [defcommand] :as c]))
-
-;; simplified version of cognitect/test-runner
-;; Changes:
-;; works with known selectors
-;; selectors are mutually exclusive
-;; proper exit codes
-;; follows pantheon test conventions
+   [vulcan.util :as u]
+   [vulcan.commands :refer [defcommand] :as c]))
 
 (defn fail? [{:keys [test fail error]}]
   (or (nil? test)

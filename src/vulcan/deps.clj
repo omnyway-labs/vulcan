@@ -5,14 +5,14 @@
    [clojure.java.io :as io]
    [clojure.tools.reader.edn :as edn]
    [clojure.tools.deps.alpha.util.maven :as mvn]
-   [pantheon.tools.util :as u]
-   [pantheon.tools.commands :refer [defcommand] :as c]
-   [pantheon.tools.deps.upgrade :as up]
-   [pantheon.tools.deps.classpath :as cp]
-   [pantheon.tools.deps.link :as link]
-   [pantheon.tools.deps.culprit :as culprit]
-   [pantheon.tools.deps.pack :as pack]
-   [pantheon.tools.deps.uberjar :as uberjar])
+   [vulcan.util :as u]
+   [vulcan.commands :refer [defcommand] :as c]
+   [vulcan.deps.upgrade :as up]
+   [vulcan.deps.classpath :as cp]
+   [vulcan.deps.link :as link]
+   [vulcan.deps.culprit :as culprit]
+   [vulcan.deps.pack :as pack]
+   [vulcan.deps.uberjar :as uberjar])
   (:import
    [java.io PushbackReader]))
 
@@ -31,9 +31,9 @@
   (->> (System/getenv "HOME")
        (format "%s/.clojure/deps.edn")))
 
-(defn find-pantheon-deps [deps]
+(defn find-org-deps [prefix deps]
   (->> deps
-       (filter #(str/starts-with? (key %) "omnypay"))
+       (filter #(str/starts-with? (key %) prefix))
        (into {})))
 
 (defn write-deps-file
@@ -42,18 +42,13 @@
    (with-open [w (io/writer f)]
      (u/prn-edn data w))))
 
-(defn find-pantheon-deps [deps]
-  (->> deps
-       (filter #(str/starts-with? (key %) "omnypay"))
-       (into {})))
-
-(defn find-local-projects [project deps]
+(defn find-local-projects [prefix project deps]
   (let [project (when project
-                  (symbol (str "omnypay/" project)))
+                  (symbol (str prefix "/" project)))
         local-deps (if project
                      (select-keys deps [project])
                      deps)]
-    (find-pantheon-deps local-deps)))
+    (find-org-deps prefix local-deps)))
 
 (defn ensure-sorted [orig new]
   (->> (into (sorted-map) new)
@@ -66,16 +61,16 @@
     (-> (up/flatten deps repos)
         (into (sorted-map)))))
 
-(defn do-upgrade [flatten?]
+(defn do-upgrade [prefix flatten?]
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
-    (->> (find-pantheon-deps deps)
+    (->> (find-org-deps prefix deps)
          (up/upgrade flatten? repos deps)
          (ensure-sorted orig))))
 
-(defn do-diff []
+(defn do-diff [prefix]
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (find-pantheon-deps deps)
+    (->> (find-org-deps prefix deps)
          (up/diff deps))))
 
 (defn do-link [project]
@@ -95,7 +90,7 @@
          (ensure-sorted orig))))
 
 (defn do-self-update []
-  (let [repo "omnypay/pantheon-dev-tools"
+  (let [repo "omnyway-labs/vulcan"
         url  (format "git@github.com:%s.git" repo)
         dep  (up/resolve-master url)]
     (u/prn-edn dep)
@@ -104,10 +99,10 @@
          {:aliases
           {:deps
            {:extra-deps {(symbol repo) dep}
-            :main-opts  ["-m" "pantheon.tools.deps"]}
+            :main-opts  ["-m" "vulcan.deps"]}
            :test
            {:extra-deps {(symbol repo) dep}
-            :main-opts  ["-m" "pantheon.tools.test"]}}}))))
+            :main-opts  ["-m" "vulcan.test"]}}}))))
 
 (defn find-culprits []
   (let [deps (:deps (read-deps-file))]
@@ -143,25 +138,25 @@
 (defn pull
   "Pulls given libs. Does not update deps.edn
   (pull)
-     pulls all pantheon deps as defined in deps.edn
+     pulls all deps as defined in deps.edn
   (pull {org.clojure/clojure {:mvn/version \"1.9.0\"}})
      pulls given map of dependencies.
   (pull project version)
     Where version is :latest or tag
-    e.g (pull :pantheon-modules :latest)
-     pulls latest sha of pantheon-modules
-    (pull :pantheon-modules 0.1.30)"
-  ([]
+    e.g (pull :my-project :latest)
+     pulls latest sha of my-project
+    (pull :my-project 0.1.30)"
+  ([prefix]
    (let [{:keys [repos deps]} (read-deps)]
-     (->>  (find-pantheon-deps deps)
+     (->>  (find-org-deps prefix deps)
            (up/pull-all repos deps))))
-  ([deps]
+  ([prefix deps]
    (when (map? deps)
      (->> (:repos (read-deps))
           (up/pull deps))))
-  ([lib version]
+  ([prefix lib version]
    (let [{:keys [repos deps]} (read-deps)
-         name  (symbol (str "omnypay/" (name lib)))
+         name  (symbol (str prefix "/" (name lib)))
          dep   (get deps name)]
      (if (= :latest version)
        (up/pull-latest {name dep} repos)
@@ -191,8 +186,9 @@
 (defcommand
   ^{:alias "upgrade"
     :opts  [["-f" "--flatten"]
-            ["-d" "--dry-run"]]
-    :doc   "Upgrade Pantheon deps to latest tags"}
+            ["-d" "--dry-run"]
+            ["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
+    :doc   "Upgrade deps to latest tags for given prefix"}
   upgrade [{:keys [options]}]
   (let [{:keys [flatten dry-run]} options]
     (let [deps (do-upgrade flatten)]
@@ -204,9 +200,11 @@
 
 (defcommand
   ^{:alias "diff"
-    :doc   "Show diff of current and upstream tags for Pantheon repos"}
-  diff [opts]
-  (u/prn-edn (do-diff)))
+    :opts [["-p" "--prefix PREFIX" "Prefix - typically Github Org"]]
+    :doc   "Show diff of current and upstream tags for repos in given org (prefix)"}
+  diff [{:keys [options]}]
+  (let [{:keys [prefix]} options]
+    (u/prn-edn (do-diff prefix))))
 
 (defcommand
   ^{:alias "pack"
@@ -237,13 +235,13 @@
 
 (defcommand
   ^{:alias "self-update"
-    :doc   "Update pantheon-dev-tools to latest master SHA"}
+    :doc   "Update vulcan to latest master SHA"}
   self-update [opts]
   (write-deps-file (do-self-update) global-deps-file))
 
 (defcommand
   ^{:alias "link"
-    :opts  [["-p" "--project PROEJCT" "Pantheon Dependency"]]
+    :opts  [["-p" "--project PROEJCT" "Project name"]]
     :doc   "link local git repos"}
   link [{:keys [options]}]
   (let [{:keys [project]} options]
@@ -251,7 +249,7 @@
 
 (defcommand
   ^{:alias "unlink"
-    :opts  [["-p" "--project PROEJCT" "Pantheon Dependency"]]
+    :opts  [["-p" "--project PROEJCT" "Project name"]]
     :doc   "unlink local git repos"}
   unlink [{:keys [options]}]
   (let [{:keys [project]} options]

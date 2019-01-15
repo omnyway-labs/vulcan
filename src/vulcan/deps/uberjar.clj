@@ -4,8 +4,8 @@
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
    [me.raynes.fs :as fs]
-   [pantheon.tools.util :as u]
-   [pantheon.tools.deps.pack :as pack])
+   [vulcan.util :as u]
+   [vulcan.deps.pack :as pack])
   (:import [java.io InputStream OutputStream PushbackReader]
            [java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption

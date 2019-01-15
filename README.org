@@ -18,7 +18,7 @@ Add below alias to ~/.clojure/deps.edn
 
 #+BEGIN_SRC clojure
 {:aliases
- {:deps
+ {:vulcan
   {:extra-deps
    {omnyway-labs/vulcan
     {:git/url "git@github.com:omnyway-labs/vulcan.git",
@@ -38,7 +38,7 @@ Add below alias to ~/.clojure/deps.edn
 * Usage
 
 #+begin_src sh
-clj -Adeps command args
+clj -Avulcan command args
 Available commands:
   classpath  Print the Pack classpath
   culprit    List dependencies which are aotd or have duplicate namespaces
@@ -55,12 +55,12 @@ Available commands:
 
 To upgrade git dependencies to their latest tags, do
 #+begin_src sh
-clj -Adeps upgrade -p <prefix>
+clj -Avulcan upgrade -p <prefix>
 
 # where prefix is the Organization prefix
 
 # for a dry run
-clj -Adeps upgrade --dry-run
+clj -Avulcan upgrade --dry-run
 #+end_src
 
 ** Flattening dependencies
@@ -68,16 +68,16 @@ clj -Adeps upgrade --dry-run
 To upgrade git dependencies to their latest tags and flatten
 out their dependencies, do
 #+begin_src sh
-clj -Adeps upgrade --flatten
+clj -Avulcan upgrade --flatten
 # or short form
-clj -Adeps upgrade -f
+clj -Avulcan upgrade -f
 #+end_src
 
 ** Diffing upstream versions
 
 To find the latest and current versions of Pantheon projects
 #+begin_src sh
-clj -Adeps diff
+clj -Avulcan diff
 # output should be something like this
 {foo/bar
  {"0.1.6" "2018-03-05T03:46:54.000+0000",
@@ -86,7 +86,7 @@ clj -Adeps diff
 
 To find latest maven releases
 #+begin_src sh
-clj -Adeps diff --maven
+clj -Avulcan diff --maven
 # output should be something like this
 {org.clojure/clojure {:current "1.9.0", :latest "1.10.0-alpha4"}}
 #+end_src
@@ -97,29 +97,29 @@ Sometimes, it is useful to "link" local projects that have local
 changes - similar to *lein checkout*. To get the similar behavior do
 
 #+begin_src sh
-clj -Adeps link --project <project>
+clj -Avulcan link --project <project>
 # or
-clj -Adeps link -p <project>
+clj -Avulcan link -p <project>
 
-# to link all pantheon projects, just do
-clj -Adeps link
+# to link all local projects, just do
+clj -Avulcan link
 #+end_src
 
 Unlinking is easier too. Make sure you unlink before comitting
 deps.edn to git
 
 #+begin_src sh
-clj -Adeps unlink -p <project>
+clj -Avulcan unlink -p <project>
 
-# to unlink all pantheon projects, just do
-clj -Adeps unlink
+# to unlink all projects, just do
+clj -Avulcan unlink
 #+end_src
 
 ** Packing Dependencies
 
 To pack all maven and git dependencies into a single directory, do
 #+begin_src  sh
-clj -Adeps pack
+clj -Avulcan pack
 #+end_src
 This packs all deps to ./lib/{git,jar}. We could tar, containerize and deploy it.
 That is what CI does. Also *pack* generates a .classpath file that
@@ -135,7 +135,7 @@ Sometimes, it is helpful to identify dependencies that AOT or have
 conflicting namespaces.
 
 #+begin_src sh
-clj -Adeps culprit
+clj -Avulcan culprit
 com.amazonaws/aws-java-sdk-kms
  {:mvn/version "1.11.221",
   :aot? true

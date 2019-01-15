@@ -1,9 +1,9 @@
 (ns vulcan.semver
   (:require
    [clojure.string :as str]
-   [pantheon.tools.util :as u]
-   [pantheon.tools.commands :refer [defcommand] :as c]
-   [pantheon.tools.semver.git :as git]))
+   [vulcan.util :as u]
+   [vulcan.commands :refer [defcommand] :as c]
+   [vulcan.semver.git :as git]))
 
 (defn as-int [x]
   (or (u/ignore-errors (Integer/parseInt x)) 0))

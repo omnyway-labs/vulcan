@@ -4,7 +4,7 @@
    [clojure.pprint :as pprint]
    [clojure.java.io :as io]
    [me.raynes.fs :as fs]
-   [pantheon.tools.util :as u]))
+   [vulcan.util :as u]))
 
 (defn find-procurer [dep]
   (cond
