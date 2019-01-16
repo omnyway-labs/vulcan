@@ -108,11 +108,6 @@
        :deps
        (culprit/find-overlapping-namespaces prefix)))
 
-(defn make-classpath []
-  (-> (read-deps-file)
-       :paths
-       (pack/make-all-classpath)))
-
 (defn pack []
   (let [{:keys [deps] :as orig} (read-deps-file)
         repos (build-repos (:mvn/repos orig))]
@@ -155,10 +150,15 @@
        (up/pull-latest {name dep} repos)
        (up/pull-tag name dep version repos)))))
 
-(defn make-classpath [resolved-deps]
-  (->> (read-deps)
+(defn make-classpath
+  ([]
+   (-> (read-deps-file)
        :paths
-       (cp/make-all-classpath resolved-deps)))
+       (pack/make-all-classpath)))
+  ([resolved-deps]
+   (->> (read-deps)
+        :paths
+        (cp/make-all-classpath resolved-deps))))
 
 (defn current-classpath []
   (cp/current-classpath))
