@@ -96,9 +96,11 @@
     :opts [["-s" "--selector SELECTOR" "Test selector to be included"]]
     :doc   "Run test for given selector"}
   test-command [{:keys [options]}]
-  (let [{:keys [selector]} options]
-    (when selector
-      (test/run-test (keyword selector)))))
+  (let [{:keys [selector]} options
+        selector (keyword selector)]
+    (if (= selector :unit)
+      (test/run-test nil)
+      (test/run-test selector))))
 
 (defcommand
   ^{:alias "next-tag"
