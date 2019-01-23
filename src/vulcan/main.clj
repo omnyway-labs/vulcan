@@ -77,7 +77,7 @@
 
 (defcommand
   ^{:alias "link"
-    :opts  [["-p" "--project PROEJCT" "Project name"]]
+    :opts  [["-p" "--project PROJECT" "Project name"]]
     :doc   "link local git repos"}
   link-command [{:keys [options]}]
   (let [{:keys [project]} options]
@@ -85,7 +85,7 @@
 
 (defcommand
   ^{:alias "unlink"
-    :opts  [["-p" "--project PROEJCT" "Project name"]]
+    :opts  [["-p" "--project PROJECT" "Project name"]]
     :doc   "unlink local git repos"}
   unlink-command [{:keys [options]}]
   (let [{:keys [project]} options]
