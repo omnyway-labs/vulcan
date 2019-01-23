@@ -2,7 +2,6 @@
 
 Tool to simplify workflow with Git-based Clojure dependencies using clojure.tools.deps
 
-- upgrade Git deps based on organization or prefix
 - upgrade to latest SHA corresponding to release tags
 - flatten dependencies
 - diff upstream versions of Git deps
@@ -56,16 +55,23 @@ Available commands:
 
 ** Upgrading Dependencies
 
-To upgrade git dependencies to their latest tags, do
+The assumption is that Git tags are SEMVERs and correspond to
+releases. `-Avulcan upgrade` upgrades dependencies to the latest
+release tags for the given organization or prefix.
+This is particularly useful in Continuous integrations and local
+development.
+
 #+begin_src sh
 clj -Avulcan upgrade -p <github-org>
 e.g clj -Avulcan upgrade -p omnyway-labs
+"wrote deps.edn"
 
 # where prefix is the Organization prefix
 
 # for a dry run
 clj -Avulcan upgrade -p <github-org> --dry-run
 #+end_src
+
 
 ** Flattening dependencies
 
@@ -76,6 +82,20 @@ clj -Avulcan upgrade -p <github-org> --flatten
 # or short form
 clj -Avulcan upgrade -p <github-org> -f
 #+end_src
+
+This is useful where top-level repos could contain a flattened deps
+map for overrides and identifying stale dependencies. Flatten command
+also prints the dependents (parents) of the dependencies. For exmaple:
+
+#+BEGIN_SRC clojure
+{:deps
+ {instaparse/instaparse
+  {:mvn/version "1.4.0",
+   :exclusions #{org.clojure/clojure},
+   :dependents [clout/clout]},
+  io.aviso/pretty
+  {:mvn/version "0.1.30", :dependents [com.taoensso/timbre]}}}
+#+END_SRC
 
 ** Diffing upstream versions
 
