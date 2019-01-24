@@ -74,7 +74,7 @@
 
 (defn link [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (find-local-projects project deps)
+    (->> (find-local-projects nil project deps)
          (link/link)
          u/spy
          (merge deps)
