@@ -111,17 +111,20 @@ clj -Avulcan diff -p <github-org>
 Sometimes, it is useful to "link" local projects that have local
 changes - similar to *lein checkout*. To get the similar behavior do
 
+Link assumes that the project we're linking is one directory above the vulkan
+directory.
+
 #+begin_src sh
-clj -Avulcan link --project <project>
+clj -Avulcan link --project <org/project>
 # or
-clj -Avulcan link -p <project>
+clj -Avulcan link -p <org/project>
 #+end_src
 
 Unlinking is easier too. Make sure you unlink before comitting
 deps.edn to git
 
 #+begin_src sh
-clj -Avulcan unlink -p <project>
+clj -Avulcan unlink -p <org/project>
 #+end_src
 
 ** Packing Dependencies

@@ -49,6 +49,10 @@
                      deps)]
     (find-org-deps prefix local-deps)))
 
+(defn find-project [project deps]
+  (let [project-sym (symbol project)]
+    (select-keys deps [project-sym])))
+
 (defn ensure-sorted [orig new]
   (->> (into (sorted-map) new)
        (assoc orig :deps)
@@ -74,7 +78,7 @@
 
 (defn link [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (find-local-projects project deps)
+    (->> (find-project project deps)
          (link/link)
          u/spy
          (merge deps)
@@ -82,7 +86,7 @@
 
 (defn unlink [project]
   (let [{:keys [deps] :as orig} (read-deps-file)]
-    (->> (find-local-projects project deps)
+    (->> (find-project project deps)
          (link/unlink)
          u/spy
          (merge deps)
