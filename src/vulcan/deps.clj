@@ -100,7 +100,7 @@
     (-> (read-deps-file global-deps-file)
         (u/rmerge
          {:aliases
-          {:deps
+          {:vulcan
            {:extra-deps {(symbol repo) dep}
             :main-opts  ["-m" "vulcan.deps"]}
            :test
