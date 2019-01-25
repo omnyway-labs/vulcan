@@ -10,8 +10,7 @@
    [vulcan.deps.classpath :as cp]
    [vulcan.deps.link :as link]
    [vulcan.deps.culprit :as culprit]
-   [vulcan.deps.pack :as pack]
-   [vulcan.deps.uberjar :as uberjar])
+   [vulcan.deps.pack :as pack])
   (:import
    [java.io PushbackReader]))
 
