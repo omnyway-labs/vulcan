@@ -6,7 +6,7 @@
    [me.raynes.fs :as fs]
    [vulcan.util :as u])
   (:import
-   (clojure.lang.RT)))
+   clojure.lang.RT))
 
 (defn find-procurer [dep]
   (cond
