@@ -22,7 +22,7 @@ Add below alias to ~/.clojure/deps.edn
   {:extra-deps
    {omnyway-labs/vulcan
     {:git/url "https://github.com/omnyway-labs/vulcan.git",
-     :sha "66a73240586a321f12305626ed399fd8a22efdd5"
+     :sha "577daf362c3f81e08d43f654ef0bbf3ddc93e015"
      :tag "master"}},
    :main-opts ["-m" "vulcan.main"],
    :jvm-opts
