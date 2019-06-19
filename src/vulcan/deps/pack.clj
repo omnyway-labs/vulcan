@@ -39,7 +39,10 @@
 (defmethod make-classpath :git [type path resource-paths]
   (->> (conj resource-paths "src")
        (distinct)
-       (map #(format "%s/%s/%s" (root type) (fs/name path) %))))
+       (map #(format "%s/%s/%s" (root type)
+                     (str (fs/name path)
+                          (or (fs/extension path) ""))
+                     %))))
 
 (defmethod make-classpath :jar [_ path _]
   (format "%s/%s.jar" (root :jar) (fs/name path)))
