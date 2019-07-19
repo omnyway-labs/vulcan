@@ -61,7 +61,11 @@
      (max rel-min min)
      (+ patch delta)]))
 
-(defn next-tag [path]
-  (let [repo (git/as-repo path)
-        semver (next-semver-version repo)]
-    (str/join "." semver)))
+(defn next-tag
+  ([path]
+   (next-tag path {}))
+  ([path {:keys [use-cgit?]}]
+   (git/with-client (if use-cgit? :cgit :jgit)
+     (let [repo (git/as-repo path)
+           semver (next-semver-version repo)]
+       (str/join "." semver)))))
