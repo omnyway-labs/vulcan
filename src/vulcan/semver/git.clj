@@ -1,68 +1,38 @@
 (ns vulcan.semver.git
   (:require
-   [clojure.java.io :as io])
-  (:import
-   (org.eclipse.jgit.lib ObjectId
-                         ObjectInserter
-                         ObjectInserter$Formatter
-                         Constants
-                         Repository)
-   (org.eclipse.jgit.storage.file FileRepositoryBuilder)
-   (org.eclipse.jgit.api Git)
-   (org.eclipse.jgit.api.errors GitAPIException)
-   (org.eclipse.jgit.revwalk RevCommit)))
+   [vulcan.semver.git.core :refer [-tags
+                                   -empty-tree-hash
+                                   -distance
+                                   -as-repo]]
+   [vulcan.semver.git.jgit :as jgit]
+   [vulcan.semver.git.cgit :as cgit]))
 
-(defn as-repo [path]
-  (let [path (if (and (string? path)
-                      (not (re-find #"\.git$" path)))
-               (str path "/.git")
-               path)]
-    (if (instance? Repository path)
-      path
-      (-> (FileRepositoryBuilder.)
-          (.setGitDir (io/as-file path))
-          (.readEnvironment)
-          (.findGitDir)
-          (.build)))))
+(def ^:dynamic *git-client* (jgit/make-client))
 
-(defn hash-object
+(def client-constructors
+  {:jgit jgit/make-client
+   :cgit cgit/make-client})
+
+(defn as-client [client]
+  (if (keyword? client)
+    (apply (client-constructors client) nil)
+    client))
+
+(defmacro with-client [client & body]
+  `(binding [*git-client* (as-client ~client)]
+     ~@body))
+
+(defn tags
   ([path]
-   (hash-object path Constants/OBJ_BLOB))
-  ([path type]
-   (let [f (io/file path)]
-     (with-open [in (io/input-stream f)]
-       (-> (ObjectInserter$Formatter.)
-           (.idFor type 0 in)
-           (.name))))))
+   (tags path false))
+  ([path raw?]
+   (-tags *git-client* path raw?)))
 
 (defn empty-tree-hash []
-  (hash-object "/dev/null" Constants/OBJ_TREE))
+  (-empty-tree-hash *git-client*))
 
-(defn revlist [path earlier later]
-  (let [repo (as-repo path)
-        ref (.resolve repo earlier)
-        master (.resolve repo "master")]
-    (when ref
-      (-> (Git. repo)
-          (.log)
-          (.addRange ref master)
-          (.call)
-          seq))))
+(defn distance [path commit]
+  (-distance *git-client* path commit))
 
-(defn distance
-  ([path earlier]
-   (distance path earlier "HEAD"))
-  ([path earlier later]
-   (count (revlist path earlier later))))
-
-(defn tags [path & [raw?]]
-  (let [repo (as-repo path)]
-    (->> (Git. repo)
-         (.tagList)
-         (.call)
-         (map
-          (fn [ref]
-            (let [ref-name (.getName ref)]
-              (if raw?
-                ref-name
-                (subs ref-name 10))))))))
+(defn as-repo [path]
+  (-as-repo *git-client* path))

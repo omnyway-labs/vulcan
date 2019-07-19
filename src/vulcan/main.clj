@@ -104,11 +104,18 @@
 
 (defcommand
   ^{:alias "next-tag"
-    :opts [["-d" "--directory PROJECT-DIRECTORY" "Path to project directory"]]
+    :opts [["-d" "--directory PROJECT-DIRECTORY" "Path to project directory"]
+           ["-c" "--use-cgit" "Use CLI git"]]
     :doc "Generate the next semantic version tag"}
   next-tag-command [{:keys [options]}]
-  (let [{:keys [directory]} options]
-    (print (semver/next-tag (or (not-empty directory) ".")))))
+  (let [{:keys [directory use-cgit]} options]
+    (print
+     (semver/next-tag
+      (or (not-empty directory) ".")
+      {:use-cgit? (boolean use-cgit)}))))
 
 (defn -main [& args]
-  (c/process args))
+  (try
+    (c/process args)
+    (finally
+      (shutdown-agents))))
