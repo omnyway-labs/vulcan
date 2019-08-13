@@ -5,21 +5,25 @@
    [clojure.java.shell :as sh]
    [vulcan.semver.git.core :refer :all]))
 
-(defn git-cmd [cmd & args]
-  (let [{:keys [exit out err]} (apply sh/sh "git" cmd args)]
-    (if (= 0 exit)
-      (str/trim-newline out)
-      (throw
-       (ex-info "Git command execution error"
-                {:status :error :err err})))))
+(defn git-cmd [path cmd & args]
+  (let [f #(let [{:keys [exit out err]} (apply sh/sh "git" cmd args)]
+             (if (= 0 exit)
+               (str/trim-newline out)
+               (throw
+                (ex-info "Git command execution error"
+                         {:status :error :err err}))))]
+    (if path
+      (sh/with-sh-dir path (f))
+      (f))))
 
 (defn as-repo [path] path)
 
 (defn empty-tree-hash []
-  (git-cmd "hash-object" "-t" "tree" "/dev/null"))
+  (git-cmd nil "hash-object" "-t" "tree" "/dev/null"))
 
 (defn revlist [path earlier later]
-  (-> (git-cmd "rev-list"
+  (-> (git-cmd path
+               "rev-list"
                (str earlier ".." later)
                "--count")
       Integer/parseInt))
@@ -31,7 +35,7 @@
    (revlist path earlier later)))
 
 (defn tags [path raw?]
-  (-> (git-cmd "tag" "--sort=-creatordate")
+  (-> (git-cmd path "tag" "--sort=-creatordate")
       str/split-lines))
 
 (deftype CGitClient []
