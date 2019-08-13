@@ -34,9 +34,12 @@
   ([path earlier later]
    (revlist path earlier later)))
 
+(defn spy [v] (prn v) v)
+
 (defn tags [path raw?]
   (-> (git-cmd path "tag" "--sort=-creatordate")
-      str/split-lines))
+      str/split-lines
+      (spy)))
 
 (deftype CGitClient []
   IGit
