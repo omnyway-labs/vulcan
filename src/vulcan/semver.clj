@@ -39,7 +39,8 @@
   (->> (git/tags path)
        (filter
         (fn [tag]
-          (re-find release-tag-regex tag)))))
+          (re-find release-tag-regex tag)))
+       (sort #(.compareTo %2 %1))))
 
 (defn latest-release-tag [path]
   (first (release-tags path)))
