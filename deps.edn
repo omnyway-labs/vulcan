@@ -1,6 +1,5 @@
-
 {:deps
- {org.clojure/clojure          {:mvn/version "1.9.0"}
+ {org.clojure/clojure          {:mvn/version "1.10.1"}
   org.clojure/tools.deps.alpha {:mvn/version "0.5.398"
                                 :exclusions  [com.fzakaria/slf4j-timbre
                                               org.slf4j/log4j-over-slf4j
