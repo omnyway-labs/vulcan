@@ -1,0 +1,18 @@
+{:aliases
+ {:vulcan
+  {:extra-paths ["test"]
+   :extra-deps
+   {omnyway-labs/vulcan
+    {:git/url "https://github.com/omnyway-labs/vulcan.git"
+     :sha "cf5f67d0062a08df2631c8a8b5562ecb86429971"
+     :tag "master"}}
+   :main-opts ["-m" "vulcan.main"]
+   :jvm-opts
+   ["-client"
+    "-XX:+UseSerialGC"
+    "-XX:CICompilerCount=1"
+    "-XX:+TieredCompilation"
+    "-Xshare:off"
+    "-Xverify:none"
+    "-XX:TieredStopAtLevel=1"]}}
+ :deps {}}
