@@ -43,7 +43,10 @@
        (sort #(.compareTo %2 %1))))
 
 (defn latest-release-tag [path]
-  (first (release-tags path)))
+  (or (first (release-tags path))
+      (throw (RuntimeException.
+              (format "No release tags matching the pattern `%s` were found"
+                      release-tag-regex)))))
 
 (defn latest-release-version [path]
   (let [[_ rel-maj rel-min] (first
