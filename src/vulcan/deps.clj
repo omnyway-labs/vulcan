@@ -93,7 +93,7 @@
 
 (defn self-update []
   (let [repo "omnyway-labs/vulcan"
-        url  (format "git@github.com:%s.git" repo)
+        url  (format "https://github.com/%s.git" repo)
         dep  (up/resolve-master url)]
     (u/prn-edn dep)
     (-> (read-deps-file global-deps-file)
