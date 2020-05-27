@@ -101,10 +101,7 @@
          {:aliases
           {:vulcan
            {:extra-deps {(symbol repo) dep}
-            :main-opts  ["-m" "vulcan.deps"]}
-           :test
-           {:extra-deps {(symbol repo) dep}
-            :main-opts  ["-m" "vulcan.test"]}}}))))
+            :main-opts  ["-m" "vulcan.main"]}}}))))
 
 (defn find-culprits [prefix]
   (->> (read-deps-file)
