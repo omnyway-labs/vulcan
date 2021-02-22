@@ -49,18 +49,21 @@
                       release-tag-regex)))))
 
 (defn latest-release-version [path]
-  (let [[_ rel-maj rel-min] (first
-                             (re-seq
-                              release-tag-regex
-                              (latest-release-tag path)))]
-    [(as-int rel-maj) (as-int rel-min)]))
+  (if-let [release-tag (latest-release-tag path)]
+    (let [[_ rel-maj rel-min] (first
+                               (re-seq release-tag-regex release-tag))]
+      [(as-int rel-maj) (as-int rel-min)])
+    [0 1]))
 
 (defn next-semver-version [path]
   (let [earlier-commit (or (latest-semver-tag path) (git/empty-tree-hash))
         dist (git/distance path earlier-commit)
         delta (if (pos? dist) 1 0)
         [maj min patch] (parse-semver earlier-commit)
-        [rel-maj rel-min] (latest-release-version path)]
+        [rel-maj rel-min] (latest-release-version path)
+        patch (if (or (< maj rel-maj) (< min rel-min))
+                0
+                patch)]
     [(max rel-maj maj)
      (max rel-min min)
      (+ patch delta)]))
